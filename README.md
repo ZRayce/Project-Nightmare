@@ -10,17 +10,6 @@
 ![C#](https://img.shields.io/badge/C%23-.NET%20WinForms-purple?style=for-the-badge&logo=csharp)
 ![License](https://img.shields.io/badge/License-MIT-red?style=for-the-badge)
 
----
-
-## 🎬 The Experience
-
-1.  **The Time Trap**: A small window pops up with a button that dodges your mouse cursor—testing your patience and speed.
-2.  **Reality Collapse**: The screen goes pitch black. A red progress bar tracks a "fake" deletion of your files while Kurumi glares at you.
-3.  **Zafkiel's Final Hour**: A perfectly replicated **Windows BSOD** (Blue Screen of Death) appears, counting from 0% to 100%.
-4.  **The Restoration**: A cinematic fade-in transition leads to the final "Thank You" screen with a manual Exit button.
-
----
-
 ## 📂 Repository Structure
 
 ```text
@@ -58,7 +47,7 @@ ESC Key: Pressing Escape at any time instantly kills the process and restores yo
 
 Exit Button: A dedicated button appears on the final screen after the simulation ends.
 
-##⚠️ Disclaimer
+## ⚠️ Disclaimer
 
 This project is a PRANK. It is a GUI simulation created for entertainment purposes only.
 
