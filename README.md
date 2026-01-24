@@ -17,11 +17,8 @@ Project-S.P.I.R.I.R.T./
 ├── 📁 Csharp-Version/      # Native WinForms implementation
 ├── 📁 Python-Version/      # Tkinter & Pillow version (Smoother animations)
 │   └── 📁 GIF/             # Core assets (tokisaki-kurumi.gif)
-|
 └── README.md               # Main Documentation
 ```
-
-To make your GitHub profile look professional, you can use Markdown to create a stunning front page. Since your project is named S.P.I.R.I.R.T., this README uses a dark, "glitch" aesthetic that fits Kurumi's character perfectly.
 
 ## 🎬 The Experience
 
