@@ -1,4 +1,4 @@
-# 🕒 Project S.P.I.R.I.R.T.
+# 🕒 Project S.P.I.R.I.T.
 ### **S**ystem **P**rank **I**nvolving **R**eality **I**nterference **T**echnology
 
 <div align="center">
