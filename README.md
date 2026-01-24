@@ -16,8 +16,6 @@
 
 ## 🎬 The Experience
 
-
-
 1.  **The Time Trap**: A small window pops up with a button that dodges your mouse cursor—testing your patience and speed.
 2.  **Reality Collapse**: The screen goes pitch black. A red progress bar tracks a "fake" deletion of your files while Kurumi glares at you.
 3.  **Zafkiel's Final Hour**: A perfectly replicated **Windows BSOD** (Blue Screen of Death) appears, counting from 0% to 100%.
@@ -66,19 +64,6 @@ Markdown
 2.  **Reality Collapse**: The screen goes pitch black. A red progress bar tracks a "fake" deletion of your files while Kurumi glares at you.
 3.  **Zafkiel's Final Hour**: A perfectly replicated **Windows BSOD** (Blue Screen of Death) appears, counting from 0% to 100%.
 4.  **The Restoration**: A cinematic fade-in transition leads to the final "Thank You" screen with a manual Exit button.
-
----
-
-## 📂 Repository Structure
-
-```text
-Project-S.P.I.R.I.R.T./
-├── 📁 Csharp-Version/      # Native WinForms implementation
-├── 📁 Python-Version/      # Tkinter & Pillow version (Smoother animations)
-│   └── 📁 GIF/             # Core assets (tokisaki-kurumi.gif)
-├── 📁 Screenshots/         # UI Previews and demo captures
-└── README.md               # Main Documentation
-```
 
 🚀 Installation & Usage
 🐍 Python Version
