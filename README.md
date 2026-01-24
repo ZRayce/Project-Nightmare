@@ -17,7 +17,7 @@ Project-S.P.I.R.I.R.T./
 ├── 📁 Csharp-Version/      # Native WinForms implementation
 ├── 📁 Python-Version/      # Tkinter & Pillow version (Smoother animations)
 │   └── 📁 GIF/             # Core assets (tokisaki-kurumi.gif)
-├── 📁 Screenshots/         # UI Previews and demo captures
+|
 └── README.md               # Main Documentation
 ```
 
