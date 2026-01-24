@@ -34,6 +34,7 @@ Project-S.P.I.R.I.R.T./
 │   └── 📁 GIF/             # Core assets (tokisaki-kurumi.gif)
 ├── 📁 Screenshots/         # UI Previews and demo captures
 └── README.md               # Main Documentation
+```
 
 To make your GitHub profile look professional, you can use Markdown to create a stunning front page. Since your project is named S.P.I.R.I.R.T., this README uses a dark, "glitch" aesthetic that fits Kurumi's character perfectly.
 
@@ -77,6 +78,8 @@ Project-S.P.I.R.I.R.T./
 │   └── 📁 GIF/             # Core assets (tokisaki-kurumi.gif)
 ├── 📁 Screenshots/         # UI Previews and demo captures
 └── README.md               # Main Documentation
+```
+
 🚀 Installation & Usage
 🐍 Python Version
 Requires the Pillow library for high-quality GIF rendering and fade effects.
