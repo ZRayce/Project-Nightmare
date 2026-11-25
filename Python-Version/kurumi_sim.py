@@ -5,6 +5,7 @@ import random
 import socket
 import struct
 import sys
+import time
 import tkinter as tk
 from tkinter import ttk
 import wave
@@ -73,7 +74,6 @@ class ZafkielAudio:
         for i in range(total):
             t = i / self.sr
             env = math.exp(-14 * t)
-            # Dissonant low Windows-style alert chord (190 Hz + 265 Hz)
             s1 = math.sin(2 * math.pi * 190 * t)
             s2 = 1.0 if math.sin(2 * math.pi * 265 * t) >= 0 else -1.0
             val = ((s1 * 0.6) + (s2 * 0.4)) * env * 17500
@@ -121,14 +121,22 @@ class KurumiFinalNightmare:
         self.audio = ZafkielAudio()
         self.hover_count = 0
         self.clones_spawned = False
+        self.uac_triggered = False
         self.gif_after_id = None
         self.desktop_shot = None
         self.tile_refs = []
         self.error_popups = []
+        self.tear_bars = []
+        self.glitch_active = False
+        self.ransom_active = False
+        self.ghost_active = False
+        self.ghost_win = None
+        self.wipe_started = False
 
         self.victim_user = self._get_username()
         self.victim_host = socket.gethostname()
         self.cpu_threads = os.cpu_count() or 4
+        self.local_tz = time.tzname[0] if time.tzname else "UTC"
 
         self.gif_path = resource_path(os.path.join("assets", "tokisaki-kurumi.gif"))
 
@@ -190,7 +198,7 @@ class KurumiFinalNightmare:
             activebackground="#66001a",
             activeforeground="white",
             font=("Segoe UI", 10, "bold"),
-            command=self.try_trigger_stage_two,
+            command=self.try_trigger_uac,
         )
         self.btn_stop.place(x=190, y=155)
         self.btn_stop.bind("<Enter>", self.handle_hover)
@@ -238,24 +246,16 @@ class KurumiFinalNightmare:
         btn.config(text="Kihihi~ Fake!", bg="#7a0022")
         self.spawn_clone_button()
 
-    def try_trigger_stage_two(self):
+    def try_trigger_uac(self):
         if self.hover_count >= 4:
-            self.start_desktop_shatter()
+            self.start_uac_trap()
 
     # =========================================================
-    # STAGE 2A: LIVE DESKTOP SCREENSHOT SHATTER
+    # STAGE 1.5: FAKE WINDOWS UAC PROMPT THAT AUTO-CLICKS "YES"
     # =========================================================
-    def start_desktop_shatter(self):
+    def start_uac_trap(self):
         self.win.destroy()
         self.root.update_idletasks()
-
-        try:
-            self.desktop_shot = ImageGrab.grab(all_screens=True)
-        except Exception:
-            try:
-                self.desktop_shot = ImageGrab.grab()
-            except Exception:
-                self.desktop_shot = None
 
         self.fs = tk.Toplevel(self.root)
         self.fs.overrideredirect(True)
@@ -267,7 +267,110 @@ class KurumiFinalNightmare:
         self.vh = self.fs.winfo_vrootheight()
 
         self.fs.geometry(f"{self.vw}x{self.vh}+{self.vx}+{self.vy}")
+        self.fs.configure(bg="#05060a")
+
+        primary_w = self.fs.winfo_screenwidth()
+        primary_h = self.fs.winfo_screenheight()
+        mw, mh = 460, 290
+        mx = -self.vx + (primary_w - mw) // 2
+        my = -self.vy + (primary_h - mh) // 2
+
+        modal = tk.Frame(self.fs, bg="#1f1f1f", highlightbackground="#4a4a4a", highlightthickness=1)
+        modal.place(x=mx, y=my, width=mw, height=mh)
+
+        top_bar = tk.Frame(modal, bg="#005a9e", height=74)
+        top_bar.pack(fill="x")
+        top_bar.pack_propagate(False)
+
+        shield = tk.Canvas(top_bar, width=36, height=36, bg="#005a9e", highlightthickness=0)
+        shield.pack(side="left", padx=(18, 12), pady=18)
+        shield.create_polygon(18, 3, 32, 8, 32, 19, 18, 33, 4, 19, 4, 8, fill="#ffd43b", outline="white", width=1)
+        shield.create_polygon(18, 3, 32, 8, 32, 19, 18, 33, fill="#339af0", outline="")
+
+        tk.Label(
+            top_bar,
+            text="Do you want to allow this app from an unknown\npublisher to make changes to your device?",
+            fg="white",
+            bg="#005a9e",
+            font=("Segoe UI", 10, "bold"),
+            justify="left",
+        ).pack(side="left", pady=14)
+
+        body = tk.Frame(modal, bg="#1f1f1f")
+        body.pack(fill="both", expand=True, padx=20, pady=14)
+
+        tk.Label(body, text="ZafkielKernelHost.exe", fg="white", bg="#1f1f1f", font=("Segoe UI", 11, "bold")).pack(anchor="w")
+        tk.Label(
+            body,
+            text="Publisher: Unknown\nFile origin: Hard drive on this computer\nProgram location: \"C:\\Windows\\Temp\\ZafkielKernelHost.exe\"",
+            fg="#cccccc",
+            bg="#1f1f1f",
+            font=("Segoe UI", 9),
+            justify="left",
+        ).pack(anchor="w", pady=(6, 4))
+
+        status_lbl = tk.Label(body, text="", fg="#ff4d6d", bg="#1f1f1f", font=("Consolas", 9, "bold"))
+        status_lbl.pack(anchor="w", pady=(6, 0))
+
+        btn_row = tk.Frame(modal, bg="#1f1f1f")
+        btn_row.pack(fill="x", padx=20, pady=(0, 18))
+
+        def override_uac(clicked_yes=False):
+            if self.uac_triggered:
+                return
+            self.uac_triggered = True
+
+            if not clicked_yes:
+                self.audio.play("error")
+                no_btn.config(state="disabled", bg="#262626")
+                status_lbl.config(text="\"Did I ask for permission? Overriding to YES...\"")
+                modal.place(x=mx - 10, y=my + 4)
+                self.root.after(70, lambda: modal.place(x=mx + 10, y=my - 4))
+                self.root.after(140, lambda: modal.place(x=mx, y=my))
+                self.root.after(260, lambda: yes_btn.config(bg="#0078d7"))
+            else:
+                yes_btn.config(bg="#0078d7")
+                status_lbl.config(text="Elevating privileges to NT AUTHORITY\\SYSTEM...")
+
+            self.root.after(820, self.start_desktop_shatter)
+
+        yes_btn = tk.Button(
+            btn_row, text="Yes", bg="#333333", fg="white",
+            font=("Segoe UI", 10, "bold"), relief="flat", pady=6,
+            command=lambda: override_uac(True),
+        )
+        yes_btn.pack(side="left", fill="x", expand=True, padx=(0, 6))
+
+        no_btn = tk.Button(
+            btn_row, text="No", bg="#333333", fg="white",
+            font=("Segoe UI", 10, "bold"), relief="flat", pady=6,
+            command=lambda: override_uac(False),
+        )
+        no_btn.pack(side="left", fill="x", expand=True, padx=(6, 0))
+
+        self.audio.play("tick")
+        self.root.after(2800, lambda: override_uac(False))
+
+    # =========================================================
+    # STAGE 2A: LIVE DESKTOP SCREENSHOT SHATTER
+    # =========================================================
+    def start_desktop_shatter(self):
+        for w in self.fs.winfo_children():
+            w.destroy()
+
         self.fs.configure(bg="black", cursor="none")
+        self.fs.withdraw()
+        self.root.update()
+
+        try:
+            self.desktop_shot = ImageGrab.grab(all_screens=True)
+        except Exception:
+            try:
+                self.desktop_shot = ImageGrab.grab()
+            except Exception:
+                self.desktop_shot = None
+
+        self.fs.deiconify()
 
         if self.desktop_shot is None:
             self.start_collapse_ui()
@@ -336,7 +439,7 @@ class KurumiFinalNightmare:
         animate_shatter(0)
 
     # =========================================================
-    # STAGE 2B: CITY OF DEVOURING TIME (FAKE SYSTEM ROAST)
+    # STAGE 2B: CITY OF DEVOURING TIME + LIVE SHARE + DEFENDER TOAST
     # =========================================================
     def start_collapse_ui(self):
         primary_w = self.fs.winfo_screenwidth()
@@ -344,6 +447,32 @@ class KurumiFinalNightmare:
         panel_w, panel_h = 640, 470
         self.base_x = -self.vx + (primary_w - panel_w) // 2
         self.base_y = -self.vy + (primary_h - panel_h) // 2
+
+        # Glowing red screen-share border around primary screen
+        px0 = -self.vx
+        py0 = -self.vy
+        self.live_borders = [
+            tk.Frame(self.fs, bg="#ff1a40", height=4, width=primary_w),
+            tk.Frame(self.fs, bg="#ff1a40", height=4, width=primary_w),
+            tk.Frame(self.fs, bg="#ff1a40", height=primary_h, width=4),
+            tk.Frame(self.fs, bg="#ff1a40", height=primary_h, width=4),
+        ]
+        self.live_borders[0].place(x=px0, y=py0)
+        self.live_borders[1].place(x=px0, y=py0 + primary_h - 4)
+        self.live_borders[2].place(x=px0, y=py0)
+        self.live_borders[3].place(x=px0 + primary_w - 4, y=py0)
+
+        self.live_pill = tk.Label(
+            self.fs,
+            text="  ● LIVE — Sharing Screen to Public Channel (47 viewers)  ",
+            fg="white",
+            bg="#1a0006",
+            highlightbackground="#ff2a55",
+            highlightthickness=1,
+            font=("Segoe UI", 9, "bold"),
+            pady=4,
+        )
+        self.live_pill.place(x=px0 + (primary_w - 360) // 2, y=py0 + 10, width=360)
 
         self.center_frame = tk.Frame(self.fs, bg="black")
         self.center_frame.place(x=self.base_x, y=self.base_y, width=panel_w, height=panel_h)
@@ -355,7 +484,7 @@ class KurumiFinalNightmare:
 
         spec_text = (
             f"TARGET: {self.victim_user}@{self.victim_host}  |  "
-            f"CPU: {self.cpu_threads} Threads  |  STATUS: COMPROMISED"
+            f"TZ: {self.local_tz}  |  CPU: {self.cpu_threads} Threads"
         )
         tk.Label(
             self.center_frame,
@@ -414,7 +543,52 @@ class KurumiFinalNightmare:
         )
         self.toast_label.pack(pady=10)
 
+        # Slide in fake Windows Defender toast from bottom-right
+        self.spawn_defender_toast(px0, py0, primary_w, primary_h)
         self.run_fake_deletion()
+
+    def spawn_defender_toast(self, px0, py0, primary_w, primary_h):
+        tw, th = 350, 96
+        target_x = px0 + primary_w - tw - 20
+        start_x = px0 + primary_w + 10
+        ty = py0 + primary_h - th - 45
+
+        self.def_toast = tk.Frame(
+            self.fs, bg="#1e1e1e", highlightbackground="#e81123", highlightthickness=1
+        )
+        self.def_toast.place(x=start_x, y=ty, width=tw, height=th)
+
+        accent = tk.Frame(self.def_toast, bg="#e81123", width=5)
+        accent.pack(side="left", fill="y")
+
+        inner = tk.Frame(self.def_toast, bg="#1e1e1e")
+        inner.pack(side="left", fill="both", expand=True, padx=10, pady=8)
+
+        tk.Label(
+            inner, text="🛡️ Windows Security  •  Just now",
+            fg="white", bg="#1e1e1e", font=("Segoe UI", 9, "bold"), anchor="w"
+        ).pack(fill="x")
+        tk.Label(
+            inner, text="Threat blocked failed",
+            fg="#ff4d6d", bg="#1e1e1e", font=("Segoe UI", 10, "bold"), anchor="w"
+        ).pack(fill="x", pady=(2, 1))
+        tk.Label(
+            inner,
+            text="Severe: Ransom:Win32/Zafkiel.A!ml\nRemediation incomplete (Access denied by SYSTEM)",
+            fg="#cccccc", bg="#1e1e1e", font=("Segoe UI", 8), justify="left", anchor="w"
+        ).pack(fill="x")
+
+        def slide_in(curr_x):
+            if not self.def_toast.winfo_exists():
+                return
+            if curr_x > target_x:
+                nxt = max(target_x, curr_x - 28)
+                self.def_toast.place(x=nxt, y=ty)
+                self.root.after(18, lambda: slide_in(nxt))
+            else:
+                self.audio.play("error")
+
+        self.root.after(500, lambda: slide_in(start_x))
 
     def animate_gif(self, label, counter):
         if not self.frames or not label.winfo_exists():
@@ -456,11 +630,10 @@ class KurumiFinalNightmare:
                 if p == 99:
                     self.roast_label.config(text=fake_logs[-1], fg="#ff3355")
                     self.audio.play("alarm")
-                    self.shake_screen(22, lambda: self.root.after(300, lambda: step(100)))
+                    self.shake_screen(20, lambda: self.root.after(280, lambda: step(100)))
                     return
 
-                # Fine-tuned pacing: brisk build-up, tense slowdown near 99%
-                delay = 36 if p < 75 else 54
+                delay = 34 if p < 75 else 50
                 self.root.after(delay, lambda: step(p + 1))
             else:
                 self.trigger_error_cascade()
@@ -491,11 +664,11 @@ class KurumiFinalNightmare:
 
         primary_w = self.fs.winfo_screenwidth()
         primary_h = self.fs.winfo_screenheight()
-        total_popups = 15
+        total_popups = 14
 
         def spawn_popup(idx):
             if idx >= total_popups:
-                self.root.after(380, self.trigger_bsod)
+                self.root.after(340, self.trigger_bsod)
                 return
 
             title, body = error_messages[idx % len(error_messages)]
@@ -505,8 +678,7 @@ class KurumiFinalNightmare:
             pop.configure(bg="#1f1f1f", highlightbackground="#ff2a55", highlightthickness=1)
 
             w, h = 360, 135
-            # Mix diagonal cascade with chaotic scatter across primary screen
-            if idx < 7:
+            if idx < 6:
                 px = 140 + (idx * 42)
                 py = 110 + (idx * 34)
             else:
@@ -515,17 +687,11 @@ class KurumiFinalNightmare:
 
             pop.geometry(f"{w}x{h}+{px}+{py}")
 
-            # Title bar
             bar = tk.Frame(pop, bg="#66001a", height=26)
             bar.pack(fill="x")
-            tk.Label(
-                bar, text=f"  {title}", fg="white", bg="#66001a", font=("Segoe UI", 9, "bold")
-            ).pack(side="left", pady=2)
-            tk.Label(
-                bar, text="✕  ", fg="#ff99aa", bg="#66001a", font=("Segoe UI", 9, "bold")
-            ).pack(side="right", pady=2)
+            tk.Label(bar, text=f"  {title}", fg="white", bg="#66001a", font=("Segoe UI", 9, "bold")).pack(side="left", pady=2)
+            tk.Label(bar, text="✕  ", fg="#ff99aa", bg="#66001a", font=("Segoe UI", 9, "bold")).pack(side="right", pady=2)
 
-            # Content row with red X icon
             content = tk.Frame(pop, bg="#1f1f1f")
             content.pack(fill="both", expand=True, padx=14, pady=10)
 
@@ -536,36 +702,25 @@ class KurumiFinalNightmare:
             icon.create_line(22, 10, 10, 22, fill="white", width=3)
 
             tk.Label(
-                content,
-                text=body,
-                fg="#f0f0f0",
-                bg="#1f1f1f",
-                font=("Segoe UI", 9),
-                justify="left",
-                wraplength=275,
+                content, text=body, fg="#f0f0f0", bg="#1f1f1f",
+                font=("Segoe UI", 9), justify="left", wraplength=275
             ).pack(side="left", fill="both")
 
-            # Fake OK button
             tk.Label(
-                pop,
-                text="   OK   ",
-                fg="white",
-                bg="#333333",
-                font=("Segoe UI", 8, "bold"),
-                pady=3,
+                pop, text="   OK   ", fg="white", bg="#333333",
+                font=("Segoe UI", 8, "bold"), pady=3
             ).pack(side="bottom", pady=(0, 8))
 
             self.error_popups.append(pop)
             self.audio.play("error")
 
-            # Accelerate spawn rate as cascade builds
             next_delay = max(45, 95 - (idx * 4))
             self.root.after(next_delay, lambda: spawn_popup(idx + 1))
 
         spawn_popup(0)
 
     # =========================================================
-    # STAGE 3: WINDOWS BSOD -> CRIMSON ZAFKIEL OVERRIDE
+    # STAGE 3: WINDOWS BSOD + HEAVY RGB CHROMATIC GLITCH
     # =========================================================
     def trigger_bsod(self):
         for pop in self.error_popups:
@@ -579,71 +734,488 @@ class KurumiFinalNightmare:
             self.root.after_cancel(self.gif_after_id)
             self.gif_after_id = None
 
-        self.center_frame.destroy()
+        for w in self.fs.winfo_children():
+            w.destroy()
+
         self.audio.play("glitch")
+        win_blue = "#0078d7"
+        self.fs.configure(bg=win_blue)
 
-        def flicker(n):
-            if n > 0:
-                self.fs.configure(bg=random.choice(["#0078d7", "black", "#66001a"]))
-                self.root.after(45, lambda: flicker(n - 1))
-            else:
-                start_blue_screen()
+        left_x = -self.vx + int(self.fs.winfo_screenwidth() * 0.12)
+        top_y = -self.vy + int(self.fs.winfo_screenheight() * 0.15)
 
-        def start_blue_screen():
-            self.fs.configure(bg="#0078d7")
-            left_x = -self.vx + int(self.fs.winfo_screenwidth() * 0.12)
-            top_y = -self.vy + int(self.fs.winfo_screenheight() * 0.16)
+        self.face_cyan = tk.Label(self.fs, text=":(", fg="#00f0ff", bg=win_blue, font=("Segoe UI Light", 88))
+        self.face_red = tk.Label(self.fs, text=":(", fg="#ff003c", bg=win_blue, font=("Segoe UI Light", 88))
+        self.bsod_face = tk.Label(self.fs, text=":(", fg="white", bg=win_blue, font=("Segoe UI Light", 88))
 
-            self.bsod_face = tk.Label(
-                self.fs, text=":(", fg="white", bg="#0078d7", font=("Segoe UI", 85)
-            )
-            self.bsod_face.place(x=left_x, y=top_y)
+        self.lbl_cyan = tk.Label(self.fs, text="", fg="#00f0ff", bg=win_blue, font=("Segoe UI Light", 21), justify="left", wraplength=920)
+        self.lbl_red = tk.Label(self.fs, text="", fg="#ff003c", bg=win_blue, font=("Segoe UI Light", 21), justify="left", wraplength=920)
+        self.bsod_lbl = tk.Label(self.fs, text="", fg="white", bg=win_blue, font=("Segoe UI Light", 21), justify="left", wraplength=920)
 
-            self.bsod_lbl = tk.Label(
-                self.fs,
-                text="",
-                fg="white",
-                bg="#0078d7",
-                font=("Segoe UI", 20),
-                justify="left",
-                wraplength=920,
-            )
-            self.bsod_lbl.place(x=left_x, y=top_y + 165)
-            update_bsod(0)
+        self.bsod_face.place(x=left_x, y=top_y)
+        self.bsod_lbl.place(x=left_x, y=top_y + 170)
+
+        def run_rgb_glitch():
+            if not self.glitch_active or not self.fs.winfo_exists():
+                return
+
+            for bar in self.tear_bars:
+                try:
+                    bar.destroy()
+                except Exception:
+                    pass
+            self.tear_bars.clear()
+
+            bg_choice = random.choice(["#590016", "#590016", "#000000", "#1a0008"])
+            self.fs.configure(bg=bg_choice)
+
+            cx, cy = random.randint(-18, -5), random.randint(-6, 6)
+            rx, ry = random.randint(5, 18), random.randint(-6, 6)
+            mx, my = random.randint(-8, 8), random.randint(-4, 4)
+
+            for w in (self.face_cyan, self.face_red, self.bsod_face, self.lbl_cyan, self.lbl_red, self.bsod_lbl):
+                w.config(bg=bg_choice)
+
+            self.face_cyan.place(x=left_x + cx, y=top_y + cy)
+            self.face_red.place(x=left_x + rx, y=top_y + ry)
+            self.bsod_face.place(x=left_x + mx, y=top_y + my)
+
+            self.lbl_cyan.place(x=left_x + cx, y=top_y + 170 + cy)
+            self.lbl_red.place(x=left_x + rx, y=top_y + 170 + ry)
+            self.bsod_lbl.place(x=left_x + mx, y=top_y + 170 + my)
+
+            for _ in range(7):
+                tear = tk.Frame(
+                    self.fs,
+                    bg=random.choice(["#00f0ff", "#ff003c", "#ffffff", "#000000"]),
+                    height=random.randint(3, 16),
+                    width=self.vw,
+                )
+                tear.place(x=random.randint(-40, 40), y=random.randint(0, self.vh))
+                self.tear_bars.append(tear)
+
+            self.root.after(55, run_rgb_glitch)
 
         def update_bsod(p):
             if p <= 100:
-                if p == 40:
-                    self.audio.play("alarm")
+                if p == 36:
+                    self.audio.play("glitch")
+                    self.glitch_active = True
+                    run_rgb_glitch()
 
-                if p >= 40:
-                    bg_color = "#590016"
-                    self.fs.configure(bg=bg_color)
-                    self.bsod_face.config(text=">:3", bg=bg_color)
-                    self.bsod_lbl.config(bg=bg_color)
+                if p > 38 and p % 16 == 0:
+                    self.audio.play("glitch")
+
+                if p >= 36:
+                    face_txt = ">:3"
                     msg = (
-                        f"ZAFKIEL OVERRIDE: Your time now belongs to Kurumi Tokisaki, {self.victim_user}.\n\n"
+                        f"ZAFKIEL OVERRIDE: Your PC now belongs to Kurumi Tokisaki, {self.victim_user}.\n\n"
                         f"{p}% complete\n\n"
                         "Stop code: SPIRIT_TIME_LEAK_0xZAFKIEL"
                     )
                 else:
+                    face_txt = ":("
                     msg = (
-                        "Your PC ran into a problem and needs to restart.\n\n"
+                        "Your PC ran into a problem and needs to restart. We're just\n"
+                        "collecting some error info, and then we'll restart for you.\n\n"
                         f"{p}% complete\n\n"
                         "Stop code: CRITICAL_PROCESS_DIED"
                     )
 
-                self.bsod_lbl.config(text=msg)
-                self.root.after(65, lambda: update_bsod(p + 2))
-            else:
-                self.show_thank_you_screen()
+                for f_lbl in (self.face_cyan, self.face_red, self.bsod_face):
+                    f_lbl.config(text=face_txt)
+                for b_lbl in (self.lbl_cyan, self.lbl_red, self.bsod_lbl):
+                    b_lbl.config(text=msg)
 
-        flicker(8)
+                self.root.after(62, lambda: update_bsod(p + 2))
+            else:
+                self.glitch_active = False
+                for bar in self.tear_bars:
+                    try:
+                        bar.destroy()
+                    except Exception:
+                        pass
+                self.tear_bars.clear()
+                self.start_bios_post()
+
+        update_bsod(0)
 
     # =========================================================
-    # STAGE 4: CINEMATIC FADE-IN REVEAL
+    # STAGE 4: AMERICAN MEGATRENDS BIOS POST SCREEN
+    # =========================================================
+    def start_bios_post(self):
+        for widget in self.fs.winfo_children():
+            widget.destroy()
+
+        self.fs.configure(bg="black")
+        left_x = -self.vx + 36
+        top_y = -self.vy + 32
+
+        header = tk.Frame(self.fs, bg="black")
+        header.place(x=left_x, y=top_y)
+
+        tri = tk.Canvas(header, width=38, height=34, bg="black", highlightthickness=0)
+        tri.pack(side="left", padx=(0, 12))
+        tri.create_polygon(19, 2, 36, 32, 2, 32, fill="#d92638", outline="")
+        tri.create_polygon(19, 12, 27, 27, 11, 27, fill="black", outline="")
+
+        tk.Label(
+            header,
+            text="AMIBIOS(C) 2026 American Megatrends, Inc.\nBIOS Date: 11/26/2026 Ver: 08.00.15-ZAFKIEL",
+            fg="#e0e0e0",
+            bg="black",
+            font=("Consolas", 12, "bold"),
+            justify="left",
+        ).pack(side="left")
+
+        lines_frame = tk.Frame(self.fs, bg="black")
+        lines_frame.place(x=left_x, y=top_y + 56)
+
+        bios_entries = [
+            (f"CPU : {self.cpu_threads}-Core Processor @ 4.20 GHz", "#cccccc", False),
+            ("Memory Test : 16384MB OK", "#cccccc", False),
+            ("Detecting Primary Master ... NVMe SSD 1024GB", "#cccccc", False),
+            ("PRI MASTER DISK: S.M.A.R.T. STATUS BAD — BACKUP AND REPLACE", "#ff3355", True),
+            ("FATAL: Master Boot Record overwritten by 0xZAFKIEL", "#ff3355", True),
+            ("Booting into emergency lock environment...", "#cccccc", False),
+        ]
+
+        def show_bios_line(idx=0):
+            if idx < len(bios_entries):
+                txt, col, bold = bios_entries[idx]
+                tk.Label(
+                    lines_frame,
+                    text=txt,
+                    fg=col,
+                    bg="black",
+                    font=("Consolas", 12, "bold" if bold else "normal"),
+                    anchor="w",
+                ).pack(fill="x", pady=2)
+                self.audio.play("error" if bold else "tick")
+                self.root.after(360, lambda: show_bios_line(idx + 1))
+            else:
+                self.root.after(650, self.start_fake_boot)
+
+        show_bios_line(0)
+
+    # =========================================================
+    # STAGE 5: FAKE WINDOWS BOOT SCREEN
+    # =========================================================
+    def start_fake_boot(self):
+        for widget in self.fs.winfo_children():
+            widget.destroy()
+
+        self.fs.configure(bg="black")
+        boot_frame = tk.Frame(self.fs, bg="black")
+        boot_frame.place(x=self.base_x, y=self.base_y, width=640, height=470)
+
+        logo_canvas = tk.Canvas(boot_frame, width=100, height=100, bg="black", highlightthickness=0)
+        logo_canvas.pack(pady=(55, 45))
+        panes = [
+            logo_canvas.create_rectangle(6, 6, 47, 47, fill="#0078d7", outline=""),
+            logo_canvas.create_rectangle(53, 6, 94, 47, fill="#0078d7", outline=""),
+            logo_canvas.create_rectangle(6, 53, 47, 94, fill="#0078d7", outline=""),
+            logo_canvas.create_rectangle(53, 53, 94, 94, fill="#0078d7", outline=""),
+        ]
+
+        spin_canvas = tk.Canvas(boot_frame, width=64, height=64, bg="black", highlightthickness=0)
+        spin_canvas.pack(pady=10)
+
+        status_lbl = tk.Label(
+            boot_frame,
+            text="Restarting...",
+            fg="#e0e0e0",
+            bg="black",
+            font=("Segoe UI Light", 16),
+        )
+        status_lbl.pack(pady=16)
+
+        boot_running = [True]
+
+        def animate_dots(angle=0):
+            if not boot_running[0] or not spin_canvas.winfo_exists():
+                return
+            spin_canvas.delete("all")
+            cx, cy, r = 32, 32, 20
+            for i in range(5):
+                a = math.radians(angle - (i * 26))
+                x = cx + r * math.cos(a)
+                y = cy + r * math.sin(a)
+                spin_canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="white", outline="")
+            self.root.after(30, lambda: animate_dots((angle + 11) % 360))
+
+        animate_dots(0)
+
+        self.root.after(1100, lambda: status_lbl.config(text="Preparing Automatic Repair..."))
+
+        def hijack_boot():
+            self.audio.play("glitch")
+            for p_id in panes:
+                logo_canvas.itemconfig(p_id, fill="#cc0022")
+            status_lbl.config(text="CRITICAL: Boot sector hijacked by ZAFKIEL.EXE", fg="#ff3366")
+
+        self.root.after(2200, hijack_boot)
+
+        def finish_boot():
+            boot_running[0] = False
+            self.start_fake_ransomware()
+
+        self.root.after(3500, finish_boot)
+
+    # =========================================================
+    # STAGE 6: RANSOMWARE + GHOST CURSOR MAGNETIC HIJACK
+    # =========================================================
+    def start_ghost_cursor(self, target_btn: tk.Widget):
+        self.ghost_active = True
+        self.fs.configure(cursor="none")
+
+        key_color = "#010203"
+        self.ghost_win = tk.Toplevel(self.fs)
+        self.ghost_win.overrideredirect(True)
+        self.ghost_win.attributes("-topmost", True)
+        self.ghost_win.wm_attributes("-transparentcolor", key_color)
+        self.ghost_win.configure(bg=key_color)
+
+        c = tk.Canvas(self.ghost_win, width=28, height=28, bg=key_color, highlightthickness=0)
+        c.pack()
+        c.create_polygon(2, 2, 22, 14, 13, 16, 18, 24, 14, 26, 9, 18, 2, 23, fill="white", outline="#ff003c", width=2)
+
+        gx = [self.fs.winfo_screenwidth() * 0.25]
+        gy = [self.fs.winfo_screenheight() * 0.25]
+        self.ghost_win.geometry(f"28x28+{int(gx[0])}+{int(gy[0])}")
+
+        def drag_loop():
+            if not self.ghost_active or not self.ghost_win or not self.ghost_win.winfo_exists():
+                return
+            try:
+                tx = target_btn.winfo_rootx() + (target_btn.winfo_width() // 2)
+                ty = target_btn.winfo_rooty() + (target_btn.winfo_height() // 2)
+
+                # Blend user's real pointer slightly while overpowering with magnetic pull
+                mx, my = self.root.winfo_pointerxy()
+                gx[0] = gx[0] * 0.84 + tx * 0.14 + (mx - gx[0]) * 0.02 + random.uniform(-3, 3)
+                gy[0] = gy[0] * 0.84 + ty * 0.14 + (my - gy[0]) * 0.02 + random.uniform(-3, 3)
+
+                self.ghost_win.geometry(f"28x28+{int(gx[0])}+{int(gy[0])}")
+
+                if math.hypot(tx - gx[0], ty - gy[0]) < 32:
+                    target_btn.config(bg="#ff0033")
+            except Exception:
+                pass
+            self.root.after(28, drag_loop)
+
+        drag_loop()
+
+    def stop_ghost_cursor(self):
+        self.ghost_active = False
+        if self.ghost_win:
+            try:
+                self.ghost_win.destroy()
+            except Exception:
+                pass
+            self.ghost_win = None
+
+    def start_fake_ransomware(self):
+        for widget in self.fs.winfo_children():
+            widget.destroy()
+
+        self.fs.configure(bg="#260008")
+        self.ransom_active = True
+
+        panel_w, panel_h = 720, 455
+        rx = -self.vx + (self.fs.winfo_screenwidth() - panel_w) // 2
+        ry = -self.vy + (self.fs.winfo_screenheight() - panel_h) // 2
+
+        panel = tk.Frame(self.fs, bg="#140005", highlightbackground="#ff1a40", highlightthickness=2)
+        panel.place(x=rx, y=ry, width=panel_w, height=panel_h)
+
+        banner = tk.Frame(panel, bg="#99001f", height=40)
+        banner.pack(fill="x")
+        tk.Label(
+            banner,
+            text="  🔒 ZAFKIEL LOCKER v2.0 — WINDOWS C:\\ ENCRYPTED",
+            fg="white",
+            bg="#99001f",
+            font=("Segoe UI", 11, "bold"),
+        ).pack(side="left", pady=8)
+        tk.Label(
+            banner,
+            text="AES-4096  ",
+            fg="#ffccd5",
+            bg="#99001f",
+            font=("Consolas", 10, "bold"),
+        ).pack(side="right", pady=8)
+
+        body = tk.Frame(panel, bg="#140005")
+        body.pack(fill="both", expand=True, padx=18, pady=16)
+
+        left_col = tk.Frame(body, bg="#1f0008", highlightbackground="#590016", highlightthickness=1, width=215)
+        left_col.pack(side="left", fill="y", padx=(0, 16))
+        left_col.pack_propagate(False)
+
+        tk.Label(left_col, text="FILES WILL BE WIPED IN", fg="#ff99ad", bg="#1f0008", font=("Segoe UI", 9, "bold")).pack(pady=(18, 4))
+        timer_lbl = tk.Label(left_col, text="02:00", fg="#ff2a55", bg="#1f0008", font=("Consolas", 30, "bold"))
+        timer_lbl.pack()
+        taunt_lbl = tk.Label(left_col, text="Time is ticking~", fg="#cccccc", bg="#1f0008", font=("Segoe UI", 9))
+        taunt_lbl.pack(pady=(2, 16))
+
+        tk.Frame(left_col, bg="#4d0013", height=1).pack(fill="x", padx=14, pady=6)
+
+        tk.Label(left_col, text="RANSOM DEMAND", fg="#ff99ad", bg="#1f0008", font=("Segoe UI", 9, "bold")).pack(pady=(12, 4))
+        tk.Label(left_col, text="$9,999.00 USD", fg="white", bg="#1f0008", font=("Segoe UI", 15, "bold")).pack()
+        tk.Label(left_col, text="or 50 Years of Lifespan", fg="#ff4d6d", bg="#1f0008", font=("Segoe UI", 9)).pack(pady=2)
+
+        right_col = tk.Frame(body, bg="#140005")
+        right_col.pack(side="left", fill="both", expand=True)
+
+        note_box = tk.Frame(right_col, bg="#0d0003", highlightbackground="#4d0013", highlightthickness=1)
+        note_box.pack(fill="both", expand=True)
+
+        note_text = (
+            f"Ooops, {self.victim_user}! Your PC files have been encrypted.\n\n"
+            f"All documents, game saves, Desktop folders, and browser passwords on "
+            f"C:\\Users\\{self.victim_user}\\ are sealed with .zafkiel extensions.\n\n"
+            "Pay $9,999.00 USD (or surrender 50 years of lifespan) before the 02:00 "
+            "timer hits zero, or every partition on your drive will be permanently wiped."
+        )
+        tk.Label(
+            note_box,
+            text=note_text,
+            fg="#f2d9de",
+            bg="#0d0003",
+            font=("Segoe UI", 10),
+            justify="left",
+            wraplength=425,
+            padx=14,
+            pady=12,
+        ).pack(anchor="nw")
+
+        btn_row = tk.Frame(right_col, bg="#140005")
+        btn_row.pack(fill="x", pady=(10, 0))
+
+        tk.Button(
+            btn_row,
+            text="Verify Payment",
+            bg="#cc0022",
+            fg="white",
+            font=("Segoe UI", 10, "bold"),
+            relief="flat",
+            pady=8,
+            command=lambda: self.start_fake_wipe("Payment verification failed! Initiating immediate wipe..."),
+        ).pack(side="left", fill="x", expand=True, padx=(0, 6))
+
+        format_btn = tk.Button(
+            btn_row,
+            text="Confirm Drive Format",
+            bg="#2b000a",
+            fg="white",
+            font=("Segoe UI", 10, "bold"),
+            relief="flat",
+            pady=8,
+            command=lambda: self.start_fake_wipe("Drive format confirmed! Purging all partitions..."),
+        )
+        format_btn.pack(side="left", fill="x", expand=True, padx=(6, 0))
+
+        tk.Label(
+            right_col,
+            text="⚠️ Mouse input hijacked — Cursor pulled toward Drive Format!",
+            fg="#ff4d6d",
+            bg="#140005",
+            font=("Consolas", 8, "bold"),
+            anchor="w",
+        ).pack(fill="x", pady=(6, 0))
+
+        self.root.update_idletasks()
+        self.start_ghost_cursor(format_btn)
+
+        remaining = [120]
+        ticks = [0]
+
+        def tick_ransom():
+            if not self.ransom_active or self.wipe_started or not self.fs.winfo_exists():
+                return
+            ticks[0] += 1
+            if ticks[0] <= 2:
+                remaining[0] -= 1
+                self.audio.play("tick")
+            else:
+                taunt_lbl.config(text="Zafkiel: Aleph! Too slow~", fg="#ff3366")
+                remaining[0] = max(0, remaining[0] - 24)
+                self.audio.play("tock")
+
+            mins, secs = divmod(remaining[0], 60)
+            timer_lbl.config(text=f"{mins:02d}:{secs:02d}")
+
+            if remaining[0] <= 0:
+                self.start_fake_wipe("Time expired! Executing full system wipe...")
+            else:
+                self.root.after(750, tick_ransom)
+
+        self.root.after(750, tick_ransom)
+
+    # =========================================================
+    # STAGE 7: FAKE FULL C:\ DRIVE WIPE CASCADE
+    # =========================================================
+    def start_fake_wipe(self, reason: str):
+        if self.wipe_started:
+            return
+        self.wipe_started = True
+        self.ransom_active = False
+        self.stop_ghost_cursor()
+        self.audio.play("alarm")
+
+        for widget in self.fs.winfo_children():
+            widget.destroy()
+
+        self.fs.configure(bg="#050001", cursor="none")
+        left_x = -self.vx + 40
+        top_y = -self.vy + 35
+
+        tk.Label(
+            self.fs,
+            text=f"⚠️ {reason}",
+            fg="#ff2a55",
+            bg="#050001",
+            font=("Consolas", 15, "bold"),
+        ).place(x=left_x, y=top_y)
+
+        console_box = tk.Frame(self.fs, bg="#050001")
+        console_box.place(x=left_x, y=top_y + 50, width=self.fs.winfo_screenwidth() - 80, height=500)
+
+        commands = [
+            f"C:\\Windows\\system32> del /f /s /q C:\\Users\\{self.victim_user}\\Desktop\\*.*",
+            f"[DELETED] C:\\Users\\{self.victim_user}\\Documents\\passwords_backup.txt",
+            f"[DELETED] C:\\Users\\{self.victim_user}\\Pictures\\Screenshots\\*.*",
+            f"[DELETED] C:\\Users\\{self.victim_user}\\AppData\\Local\\Google\\Chrome\\User Data\\*.*",
+            "[DELETED] C:\\Program Files (x86)\\Steam\\steamapps\\*.*",
+            "[DELETED] C:\\Windows\\System32\\drivers\\etc\\hosts",
+            "[DELETED] C:\\Windows\\System32\\ntoskrnl.exe",
+            "[WIPED] C:\\ Drive — 0 bytes remaining. Formatting Master Boot Record...",
+        ]
+
+        def print_line(idx=0):
+            if idx < len(commands):
+                is_last = idx == len(commands) - 1
+                tk.Label(
+                    console_box,
+                    text=commands[idx],
+                    fg="white" if is_last else "#ff6680",
+                    bg="#050001",
+                    font=("Consolas", 12, "bold" if is_last else "normal"),
+                    anchor="w",
+                ).pack(fill="x", pady=3)
+                self.audio.play("tick" if idx % 2 == 0 else "tock")
+                self.root.after(320, lambda: print_line(idx + 1))
+            else:
+                self.root.after(950, self.show_thank_you_screen)
+
+        print_line(0)
+
+    # =========================================================
+    # STAGE 8: CINEMATIC FADE-IN REVEAL
     # =========================================================
     def show_thank_you_screen(self):
+        self.stop_ghost_cursor()
         for widget in self.fs.winfo_children():
             widget.destroy()
 
@@ -668,7 +1240,7 @@ class KurumiFinalNightmare:
 
         tk.Label(
             thanks_frame,
-            text="Thanks for trying out Project Nightmare!\nNo files, photos, or system settings were actually harmed.",
+            text="Thanks for trying out Project Nightmare!\nNo files were encrypted, deleted, or broadcast.",
             fg="white",
             bg="black",
             font=("Segoe UI", 14),

@@ -33,6 +33,16 @@
       font-size: 16px; font-weight: bold; cursor: pointer;
     }
 
+    /* NAVIGATION TRAP TOAST */
+    #nav-toast {
+      position: fixed; top: -70px; left: 50%; transform: translateX(-50%);
+      background: #4d0013; border: 1px solid #ff3366; color: #fff;
+      padding: 10px 18px; border-radius: 8px; font-family: 'Courier New', monospace;
+      font-size: 13px; z-index: 200; transition: top 0.25s ease;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.8); max-width: 92vw;
+    }
+    #nav-toast.show { top: 16px; }
+
     /* STAGE 1: TIME TRAP & SHADOW CLONES */
     #trap-screen { background: rgba(0, 0, 0, 0.95); }
     .popup-box {
@@ -61,17 +71,65 @@
       transition: top 0.08s, left 0.08s;
     }
 
-    /* STAGE 2: CITY OF DEVOURING TIME */
-    #collapse-screen { background: #000; font-family: 'Courier New', monospace; }
+    /* =========================================================
+       STAGE 1.5: FAKE WINDOWS UAC / MOBILE ROOT PROMPT
+       ========================================================= */
+    #uac-screen {
+      background: rgba(2, 4, 10, 0.92);
+      backdrop-filter: blur(6px);
+      z-index: 40;
+    }
+    .uac-modal {
+      width: 94%; max-width: 450px;
+      background: #1f1f1f; border: 1px solid #484848;
+      box-shadow: 0 22px 60px rgba(0,0,0,0.9);
+      text-align: left; overflow: hidden;
+    }
+    .uac-top {
+      background: #005a9e; padding: 16px 20px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .uac-top.mobile-style { background: #2b2d31; }
+    .uac-title {
+      font-size: 16px; font-weight: 400; line-height: 1.35; color: #fff;
+    }
+    .uac-body {
+      padding: 18px 20px; font-size: 13px; color: #d8d8d8; line-height: 1.55;
+    }
+    .uac-app {
+      font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 8px;
+    }
+    .uac-status {
+      color: #ff4d6d; font-family: monospace; font-size: 12px;
+      min-height: 18px; margin-top: 10px;
+    }
+    .uac-actions {
+      display: flex; gap: 10px; padding: 0 20px 20px;
+    }
+    .uac-btn {
+      flex: 1; padding: 10px; font-size: 14px; font-weight: 600;
+      border: 1px solid #555; background: #333; color: #fff;
+      cursor: pointer; transition: transform 0.08s, background 0.12s;
+    }
+    .uac-btn.pressed-yes {
+      background: #0078d7; border-color: #3399ff; transform: scale(0.95);
+    }
 
-    .fake-cam {
-      position: fixed; top: 14px; right: 14px;
-      width: 155px; height: 105px;
-      background: radial-gradient(circle, #1a2e1a 0%, #050a05 100%);
-      border: 1px solid #ff2a55; border-radius: 6px;
-      padding: 6px; text-align: left; font-size: 10px; color: #00ff66;
-      box-shadow: 0 0 15px rgba(255, 42, 85, 0.35);
-      overflow: hidden; z-index: 5;
+    /* =========================================================
+       LIVE SCREEN SHARE BORDER & DEFENDER TOAST
+       ========================================================= */
+    #live-share-frame {
+      position: fixed; inset: 0; pointer-events: none; z-index: 75;
+      display: none; border: 3px solid #ff1a40;
+      box-shadow: inset 0 0 26px rgba(255, 26, 64, 0.5);
+    }
+    .live-pill {
+      position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+      background: #180005; border: 1px solid #ff2a55; color: #fff;
+      padding: 5px 14px; border-radius: 999px; font-size: 11px;
+      font-family: 'Segoe UI', sans-serif; font-weight: 600;
+      display: flex; align-items: center; gap: 7px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.85); white-space: nowrap;
     }
     .rec-dot {
       display: inline-block; width: 8px; height: 8px;
@@ -80,9 +138,31 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
+    #defender-toast {
+      position: fixed; bottom: 18px; right: -400px;
+      width: min(350px, 90vw); background: #1e1e1e;
+      border: 1px solid #3c3c3c; border-left: 4px solid #e81123;
+      border-radius: 6px; padding: 12px 14px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.85);
+      text-align: left; font-family: 'Segoe UI', sans-serif;
+      z-index: 80; transition: right 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    #defender-toast.show { right: 18px; }
+
+    /* STAGE 2: CITY OF DEVOURING TIME */
+    #collapse-screen { background: #000; font-family: 'Courier New', monospace; }
+    .fake-cam {
+      position: fixed; top: 46px; right: 14px;
+      width: 150px; height: 96px;
+      background: radial-gradient(circle, #1a2e1a 0%, #050a05 100%);
+      border: 1px solid #ff2a55; border-radius: 6px;
+      padding: 6px; text-align: left; font-size: 10px; color: #00ff66;
+      box-shadow: 0 0 15px rgba(255, 42, 85, 0.35);
+      overflow: hidden; z-index: 5;
+    }
     #kurumi-gif {
-      width: 185px; max-width: 52vw; border-radius: 10px;
-      border: 2px solid #990000; margin-bottom: 12px;
+      width: 175px; max-width: 48vw; border-radius: 10px;
+      border: 2px solid #990000; margin-bottom: 10px;
     }
     .hw-box {
       background: #120005; border: 1px solid #66001a;
@@ -96,10 +176,9 @@
       border-radius: 4px; overflow: hidden; margin: 10px 0;
     }
     #bar-fill { width: 0%; height: 100%; background: #cc0022; }
-    #scan-log { color: #ff3355; font-size: 14px; min-height: 40px; max-width: 500px; }
-
+    #scan-log { color: #ff3355; font-size: 14px; min-height: 38px; max-width: 500px; }
     .leak-toast {
-      margin-top: 12px; width: 92%; max-width: 500px;
+      margin-top: 10px; width: 92%; max-width: 500px;
       background: #1e1f22; border-left: 4px solid #f23f43;
       padding: 10px 14px; border-radius: 6px; text-align: left;
       font-family: 'Segoe UI', sans-serif; font-size: 12px; color: #dbdee1;
@@ -107,25 +186,19 @@
 
     /* STAGE 2B: CASCADING SYSTEM ERROR DIALOGS */
     .err-dialog {
-      position: fixed;
-      width: min(330px, 84vw);
-      background: #1d1e22;
-      border: 1px solid #ff2a55;
-      border-radius: 6px;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.85);
-      font-family: 'Segoe UI', sans-serif;
-      text-align: left;
-      overflow: hidden;
-      z-index: 50;
-      animation: popIn 0.08s ease-out;
+      position: fixed; width: min(340px, 84vw);
+      background: #1d1e22; border: 1px solid #ff2a55;
+      border-radius: 6px; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.85);
+      font-family: 'Segoe UI', sans-serif; text-align: left;
+      overflow: hidden; z-index: 60; animation: popIn 0.08s ease-out;
     }
     @keyframes popIn {
       from { transform: scale(0.86); opacity: 0.4; }
       to { transform: scale(1); opacity: 1; }
     }
     .err-titlebar {
-      background: #66001a; color: #fff;
-      padding: 5px 10px; font-size: 11px; font-weight: bold;
+      background: #66001a; color: #fff; padding: 5px 10px;
+      font-size: 11px; font-weight: bold;
       display: flex; justify-content: space-between; align-items: center;
     }
     .err-body {
@@ -138,36 +211,172 @@
       display: flex; align-items: center; justify-content: center;
       font-weight: bold; font-size: 14px;
     }
-    .err-footer {
-      padding: 0 12px 10px; text-align: right;
-    }
+    .err-footer { padding: 0 12px 10px; text-align: right; }
     .err-ok {
       display: inline-block; background: #33363f; color: #fff;
       padding: 3px 16px; border-radius: 3px; font-size: 11px; font-weight: bold;
     }
 
-    /* STAGE 3: BSOD -> ZAFKIEL OVERRIDE */
+    /* STAGE 3: 1:1 PC BSOD / MOBILE KERNEL PANIC + GLITCH */
     #bsod-screen {
-      background: #0078d7; align-items: flex-start;
-      text-align: left; padding: 10vw; transition: background 0.2s;
+      background: #0078D7; align-items: flex-start; justify-content: center;
+      text-align: left; padding: 8vh 11vw;
+      font-family: 'Segoe UI Light', 'Segoe UI', -apple-system, sans-serif;
+      font-weight: 300; transition: background 0.08s steps(1);
     }
-    .sad-face { font-size: clamp(60px, 14vw, 110px); margin-bottom: 16px; }
-    .bsod-msg { font-size: clamp(16px, 3.5vw, 24px); max-width: 720px; line-height: 1.5; }
-    .bsod-code { margin-top: 24px; font-family: monospace; font-size: 14px; opacity: 0.9; }
+    #bsod-screen.mobile-panic {
+      background: #0a0a0c; align-items: center; text-align: center;
+      font-family: 'Courier New', monospace; padding: 24px;
+    }
+    .bsod-container { width: 100%; max-width: 960px; position: relative; z-index: 2; }
+    .sad-face { font-size: clamp(72px, 11vw, 132px); line-height: 1.05; margin-bottom: 24px; font-weight: 300; }
+    .bsod-msg { font-size: clamp(18px, 2.3vw, 28px); line-height: 1.42; max-width: 820px; font-weight: 300; }
+    .bsod-progress { font-size: clamp(18px, 2.3vw, 28px); margin: 26px 0 34px; font-weight: 300; }
+    .bsod-bottom { display: flex; align-items: flex-start; gap: 22px; margin-top: 8px; }
+    .bsod-qr { width: 112px; height: 112px; background: #fff; padding: 6px; flex-shrink: 0; }
+    .bsod-details { font-family: 'Segoe UI', sans-serif; font-size: clamp(12px, 1.35vw, 15px); line-height: 1.55; }
+    .bsod-details p { margin: 0 0 14px; }
 
-    /* STAGE 4: FAKE ZAFKIEL RANSOMWARE LOCKOUT */
-    #ransom-screen { background: #3b000d; font-family: 'Courier New', monospace; }
-    .ransom-box {
-      border: 2px solid #ff3366; background: #140005;
-      padding: 24px; border-radius: 10px; max-width: 480px; width: 94%;
+    .glitch-rgb {
+      text-shadow: -4px 0 #ff003c, 4px 0 #00f0ff;
+      animation: rgbJitter 0.07s infinite;
+    }
+    @keyframes rgbJitter {
+      0%   { transform: translate(0, 0) skewX(0deg); }
+      25%  { transform: translate(-6px, 2px) skewX(-4deg); }
+      50%  { transform: translate(7px, -2px) skewX(5deg); }
+      75%  { transform: translate(-3px, -1px) skewX(-2deg); }
+      100% { transform: translate(4px, 1px) skewX(3deg); }
+    }
+    .glitch-invert { filter: invert(1) hue-rotate(165deg) contrast(1.8); }
+    #scanline-overlay {
+      position: fixed; inset: 0; pointer-events: none; z-index: 90; display: none;
+      background: repeating-linear-gradient(
+        to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px,
+        rgba(0,0,0,0.35) 3px, rgba(255,0,60,0.12) 4px
+      );
+    }
+    .tear-bar {
+      position: fixed; left: 0; width: 100vw; pointer-events: none;
+      z-index: 85; mix-blend-mode: difference;
     }
 
-    /* STAGE 5: REVEAL & OPT-IN VIRAL LINK BUILDER */
+    /* =========================================================
+       STAGE 4: AMERICAN MEGATRENDS BIOS POST SCREEN
+       ========================================================= */
+    #bios-screen {
+      background: #000; color: #d4d4d4;
+      font-family: 'Courier New', monospace;
+      align-items: flex-start; justify-content: flex-start;
+      text-align: left; padding: 28px 34px;
+      font-size: clamp(12px, 1.5vw, 15px); line-height: 1.65;
+    }
+    .bios-header {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 18px;
+    }
+
+    /* STAGE 5: FAKE WINDOWS / MOBILE BOOT SCREEN */
+    #boot-screen { background: #000000; color: #ffffff; }
+    .win-logo {
+      display: grid; grid-template-columns: repeat(2, 42px); grid-gap: 4px;
+      margin-bottom: 54px; transition: filter 0.2s;
+    }
+    .win-pane { width: 42px; height: 42px; background: #0078D7; transition: background 0.2s; }
+    .win-logo.hijacked .win-pane { background: #cc0022; box-shadow: 0 0 18px #ff003c; }
+    .mobile-boot-icon {
+      font-size: 58px; margin-bottom: 36px;
+      animation: pulseBoot 1s infinite alternate;
+    }
+    @keyframes pulseBoot { from { opacity: 0.4; } to { opacity: 1; } }
+
+    .boot-spinner { position: relative; width: 44px; height: 44px; margin-bottom: 22px; }
+    .boot-dot {
+      position: absolute; inset: 0;
+      animation: spinDot 2.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+    }
+    .boot-dot::after {
+      content: ""; display: block; width: 5px; height: 5px;
+      border-radius: 50%; background: #fff; margin: 0 auto;
+    }
+    .boot-dot:nth-child(2) { animation-delay: 0.16s; }
+    .boot-dot:nth-child(3) { animation-delay: 0.32s; }
+    .boot-dot:nth-child(4) { animation-delay: 0.48s; }
+    .boot-dot:nth-child(5) { animation-delay: 0.64s; }
+    @keyframes spinDot { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    #boot-status { font-size: 16px; color: #e0e0e0; font-weight: 300; letter-spacing: 0.3px; }
+
+    /* =========================================================
+       STAGE 6: RANSOMWARE LOCKOUT + GHOST CURSOR HIJACK
+       ========================================================= */
+    #ransom-screen { background: #290009; font-family: 'Segoe UI', sans-serif; }
+    .ransom-panel {
+      width: 95%; max-width: 720px; background: #140005;
+      border: 2px solid #ff1a40; border-radius: 8px;
+      box-shadow: 0 0 45px rgba(255, 0, 50, 0.5);
+      overflow: hidden; text-align: left;
+    }
+    .ransom-banner {
+      background: #99001f; padding: 12px 18px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-weight: bold; font-size: clamp(13px, 2vw, 17px);
+    }
+    .ransom-grid {
+      display: grid; grid-template-columns: 210px 1fr; gap: 18px; padding: 18px;
+    }
+    @media (max-width: 650px) {
+      .ransom-grid { grid-template-columns: 1fr; text-align: center; }
+    }
+    .ransom-side {
+      background: #1f0008; border: 1px solid #590016;
+      border-radius: 6px; padding: 12px; text-align: center;
+    }
+    .timer-box {
+      font-family: 'Courier New', monospace; font-size: 32px;
+      font-weight: bold; color: #ff2a55; margin: 6px 0;
+    }
+    .ransom-note {
+      background: #0d0003; border: 1px solid #4d0013;
+      padding: 12px; border-radius: 6px; font-size: 13px;
+      line-height: 1.45; color: #f2d9de;
+    }
+    .ransom-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .ransom-btn {
+      flex: 1; min-width: 140px; padding: 10px 12px;
+      background: #cc0022; color: #fff; border: 1px solid #ff4d6d;
+      border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 13px;
+    }
+    .ransom-btn.secondary { background: #2b000a; }
+    .ransom-btn.magnet-hover {
+      background: #ff0033; box-shadow: 0 0 18px #ff1a40; transform: scale(1.03);
+    }
+
+    #ghost-cursor {
+      position: fixed; width: 26px; height: 26px;
+      pointer-events: none; z-index: 150; display: none;
+      filter: drop-shadow(0 0 6px #ff003c);
+    }
+
+    /* STAGE 7: FAKE FULL SYSTEM WIPE TERMINAL */
+    #wipe-screen {
+      background: #050001; font-family: 'Courier New', monospace;
+      align-items: flex-start; justify-content: flex-start;
+      padding: 24px; text-align: left;
+    }
+    .wipe-header {
+      width: 100%; border-bottom: 1px solid #ff1a40;
+      padding-bottom: 10px; margin-bottom: 14px;
+      color: #ff2a55; font-weight: bold; font-size: clamp(14px, 2.2vw, 18px);
+    }
+    #wipe-console {
+      width: 100%; flex: 1; overflow: hidden;
+      font-size: clamp(11px, 1.5vw, 14px); line-height: 1.55; color: #ff6680;
+    }
+
+    /* STAGE 8: REVEAL & SHARE */
     #end-screen { background: #000; opacity: 0; transition: opacity 1.2s ease-in; overflow-y: auto; }
     .share-card {
       background: #14161f; border: 1px solid #2c3142;
-      border-radius: 10px; padding: 16px; max-width: 420px; width: 100%;
-      margin-top: 10px;
+      border-radius: 10px; padding: 16px; max-width: 420px; width: 100%; margin-top: 10px;
     }
     .share-input {
       width: 100%; padding: 10px; border-radius: 6px;
@@ -183,6 +392,37 @@
   </style>
 </head>
 <body>
+
+  <div id="scanline-overlay"></div>
+  <div id="nav-toast"></div>
+
+  <!-- LIVE SCREEN SHARE OVERLAY -->
+  <div id="live-share-frame">
+    <div class="live-pill">
+      <span class="rec-dot"></span>
+      <span>LIVE — Sharing Screen to Public Channel (47 viewers)</span>
+    </div>
+  </div>
+
+  <!-- FAKE WINDOWS DEFENDER TOAST -->
+  <div id="defender-toast">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <span style="font-size:12px;font-weight:700;color:#fff;">🛡️ Windows Security</span>
+      <span style="font-size:10px;color:#aaa;">Just now</span>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:#ff4d6d;margin-bottom:3px;" id="def-title">
+      Threat blocked failed
+    </div>
+    <div style="font-size:11.5px;color:#cccccc;line-height:1.35;" id="def-body">
+      Severe: Ransom:Win32/Zafkiel.A!ml<br/>
+      Remediation incomplete (Access denied by SYSTEM)
+    </div>
+  </div>
+
+  <!-- GHOST CURSOR SVG -->
+  <svg id="ghost-cursor" viewBox="0 0 24 24">
+    <path d="M3 2L20 12.5L12 14.5L16.5 21.5L13.5 23L9 16L3 20.5V2Z" fill="#ffffff" stroke="#ff003c" stroke-width="1.8"/>
+  </svg>
 
   <!-- STAGE 0: BAIT -->
   <div id="bait-screen" class="screen active">
@@ -210,12 +450,40 @@
     </div>
   </div>
 
+  <!-- STAGE 1.5: FAKE UAC / ROOT PERMISSION TRAP -->
+  <div id="uac-screen" class="screen">
+    <div class="uac-modal" id="uac-modal">
+      <div class="uac-top" id="uac-top">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L4 5V11C4 16.55 7.41 21.74 12 23C16.59 21.74 20 16.55 20 11V5L12 2Z" fill="#ffd43b" stroke="#fff" stroke-width="1.5"/>
+          <path d="M12 2V23C16.59 21.74 20 16.55 20 11V5L12 2Z" fill="#339af0"/>
+        </svg>
+        <div class="uac-title" id="uac-header-text">
+          Do you want to allow this app from an unknown publisher to make changes to your device?
+        </div>
+      </div>
+      <div class="uac-body">
+        <div class="uac-app" id="uac-app-name">ZafkielKernelHost.exe</div>
+        <div id="uac-meta">
+          Publisher: Unknown<br/>
+          File origin: Hard drive on this computer<br/>
+          Program location: "C:\Windows\Temp\ZafkielKernelHost.exe"
+        </div>
+        <div class="uac-status" id="uac-status"></div>
+      </div>
+      <div class="uac-actions">
+        <button class="uac-btn" id="uac-yes-btn" onclick="triggerUacOverride(true)">Yes</button>
+        <button class="uac-btn" id="uac-no-btn" onclick="triggerUacOverride(false)">No</button>
+      </div>
+    </div>
+  </div>
+
   <!-- STAGE 2: REALITY COLLAPSE -->
   <div id="collapse-screen" class="screen">
     <div class="fake-cam">
       <div><span class="rec-dot"></span> REC • FRONT_CAM_01</div>
-      <div style="margin-top: 10px; color: #ff4d6d; font-weight: bold;">[ SUBJECT LOCKED ]</div>
-      <div style="margin-top: 5px; color: #aaa;">Panic Level: HIGH<br>Expression: Priceless~</div>
+      <div style="margin-top: 8px; color: #ff4d6d; font-weight: bold;">[ SUBJECT LOCKED ]</div>
+      <div style="margin-top: 4px; color: #aaa;">Panic Level: HIGH<br>Expression: Priceless~</div>
     </div>
 
     <img id="kurumi-gif" src="assets/tokisaki-kurumi.gif" alt="Kurumi" onerror="this.style.display='none'" />
@@ -234,40 +502,116 @@
     </div>
   </div>
 
-  <!-- STAGE 3: BSOD -->
+  <!-- STAGE 3: 1:1 PC BSOD / MOBILE KERNEL PANIC -->
   <div id="bsod-screen" class="screen">
-    <div class="sad-face" id="bsod-face">:(</div>
-    <div class="bsod-msg" id="bsod-msg">
-      Your device ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.
+    <div class="bsod-container" id="bsod-container">
+      <div class="sad-face" id="bsod-face">:(</div>
+      <div class="bsod-msg" id="bsod-msg">
+        Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.
+      </div>
+      <div class="bsod-progress" id="bsod-pct">0% complete</div>
+
+      <div class="bsod-bottom" id="bsod-bottom">
+        <svg class="bsod-qr" id="bsod-qr" viewBox="0 0 25 25" shape-rendering="crispEdges">
+          <rect width="25" height="25" fill="#ffffff"/>
+          <path fill="#0078D7" d="M1,1h7v7h-7z M2,2v5h5v-5z M3,3h3v3h-3z M17,1h7v7h-7z M18,2v5h5v-5z M19,3h3v3h-3z M1,17h7v7h-7z M2,18v5h5v-5z M3,19h3v3h-3z M10,2h2v2h-2z M13,3h2v3h-2z M10,6h3v2h-3z M2,10h3v2h-3z M7,10h2v3h-2z M11,10h4v2h-4z M17,10h3v2h-3z M22,10h2v4h-2z M4,13h2v3h-2z M9,14h3v2h-3z M14,13h2v4h-2z M18,14h3v2h-3z M10,18h2v3h-2z M14,19h3v2h-3z M19,18h2v2h-2z M21,20h3v4h-3z M13,22h4v2h-4z"/>
+        </svg>
+
+        <div class="bsod-details">
+          <p id="bsod-url">For more information about this issue and possible fixes, visit https://www.windows.com/stopcode</p>
+          <p id="bsod-support">If you call a support person, give them this info:<br/>
+          <span id="bsod-code">Stop code: CRITICAL_PROCESS_DIED</span></p>
+        </div>
+      </div>
     </div>
-    <div class="bsod-msg" style="margin-top: 20px;" id="bsod-pct">0% complete</div>
-    <div class="bsod-code" id="bsod-code">Stop code: CRITICAL_PROCESS_DIED</div>
   </div>
 
-  <!-- STAGE 4: FAKE RANSOMWARE LOCK -->
+  <!-- STAGE 4: AMERICAN MEGATRENDS BIOS POST SCREEN -->
+  <div id="bios-screen" class="screen">
+    <div class="bios-header">
+      <svg width="36" height="32" viewBox="0 0 36 32">
+        <polygon points="18,2 34,30 2,30" fill="#d92638"/>
+        <polygon points="18,11 26,26 10,26" fill="#000"/>
+      </svg>
+      <div>
+        <div style="color:#fff;font-weight:bold;">AMIBIOS(C) 2026 American Megatrends, Inc.</div>
+        <div>BIOS Date: 11/26/2026 Ver: 08.00.15-ZAFKIEL</div>
+      </div>
+    </div>
+    <div id="bios-lines"></div>
+  </div>
+
+  <!-- STAGE 5: FAKE WINDOWS / MOBILE BOOT SCREEN -->
+  <div id="boot-screen" class="screen">
+    <div class="win-logo" id="win-logo">
+      <div class="win-pane"></div>
+      <div class="win-pane"></div>
+      <div class="win-pane"></div>
+      <div class="win-pane"></div>
+    </div>
+    <div class="mobile-boot-icon" id="mobile-boot-icon" style="display: none;">⚙️</div>
+
+    <div class="boot-spinner">
+      <div class="boot-dot"></div>
+      <div class="boot-dot"></div>
+      <div class="boot-dot"></div>
+      <div class="boot-dot"></div>
+      <div class="boot-dot"></div>
+    </div>
+    <div id="boot-status">Restarting...</div>
+  </div>
+
+  <!-- STAGE 6: FAKE RANSOMWARE LOCKOUT -->
   <div id="ransom-screen" class="screen">
-    <div class="ransom-box">
-      <div style="font-size: 34px;">⏳</div>
-      <h2 style="color: #ff3366; margin: 8px 0;">ALL FILES ENCRYPTED (.zafkiel)</h2>
-      <p style="font-size: 13px; color: #ddd; line-height: 1.5;">
-        Your photos, messages, and browser history have been sealed inside Zafkiel's shadow.
-      </p>
-      <div style="font-size: 28px; color: #ff1a40; font-weight: bold; margin: 12px 0;" id="ransom-timer">
-        00:04
+    <div class="ransom-panel">
+      <div class="ransom-banner">
+        <span id="ransom-header-title">🔒 ZAFKIEL LOCKER v2.0 — SYSTEM ENCRYPTED</span>
+        <span>AES-4096</span>
       </div>
-      <div style="font-size: 12px; color: #ff8099;">
-        Ransom Required: <strong>50 Years of Lifespan</strong>
+      <div class="ransom-grid">
+        <div class="ransom-side">
+          <div style="font-size: 11px; color: #ff99ad;">FILES WILL BE WIPED IN</div>
+          <div class="timer-box" id="ransom-timer">02:00</div>
+          <div style="font-size: 11px; color: #aaa;" id="timer-taunt">Time is ticking~</div>
+          <hr style="border: 0; border-top: 1px solid #4d0013; margin: 10px 0;" />
+          <div style="font-size: 11px; color: #ff99ad;">RANSOM DEMAND</div>
+          <div style="font-size: 16px; font-weight: bold; color: #fff; margin-top: 4px;">
+            $9,999.00 USD
+          </div>
+          <div style="font-size: 11px; color: #ff4d6d;">or 50 Years of Lifespan</div>
+        </div>
+
+        <div>
+          <div class="ransom-note" id="ransom-body-text"></div>
+          <div class="ransom-actions">
+            <button class="ransom-btn" onclick="triggerWipeNow('Payment verification failed! Initiating immediate wipe...')">
+              Verify Payment
+            </button>
+            <button class="ransom-btn secondary" id="format-btn" onclick="triggerWipeNow('Drive format confirmed! Purging all partitions...')">
+              Confirm Drive Format
+            </button>
+          </div>
+          <div id="ghost-status" style="font-size:11px;color:#ff4d6d;font-family:monospace;margin-top:8px;min-height:15px;"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- STAGE 5: REVEAL & MANUAL SHARE -->
+  <!-- STAGE 7: FAKE SYSTEM WIPE CASCADE -->
+  <div id="wipe-screen" class="screen">
+    <div class="wipe-header" id="wipe-header">
+      ⚠️ CRITICAL: EXECUTING FULL SYSTEM WIPE...
+    </div>
+    <div id="wipe-console"></div>
+  </div>
+
+  <!-- STAGE 8: REVEAL & MANUAL SHARE -->
   <div id="end-screen" class="screen">
     <h1 style="color: #ff3366; font-family: monospace; font-size: clamp(32px, 8vw, 54px); margin: 0;">
       ARA ARA~!
     </h1>
     <p style="max-width: 440px; color: #ddd; line-height: 1.5; margin: 12px 0;">
-      You got pranked by <strong>Kurumi Tokisaki</strong>! Relax—zero files were touched, your camera was never accessed, and nothing was sent to anyone.
+      You got pranked by <strong>Kurumi Tokisaki</strong>! Relax—zero files were encrypted or deleted, your screen was never broadcast, and your device is 100% safe.
     </p>
 
     <div class="share-card">
@@ -290,6 +634,8 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const targetName = (params.get('to') || 'Shido-san').replace(/[<>]/g, '').slice(0, 24);
+    const isDesktop = !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) && window.innerWidth >= 768;
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local/UTC';
 
     if (params.get('bait') === 'album') {
       document.getElementById('bait-icon').textContent = '📸';
@@ -299,12 +645,55 @@
       document.getElementById('bait-cta').textContent = 'Verify & View Album';
     }
 
+    if (!isDesktop) {
+      document.getElementById('uac-top').classList.add('mobile-style');
+      document.getElementById('uac-header-text').textContent =
+        'Allow ZafkielSystemService to access root storage and device administrators?';
+      document.getElementById('uac-app-name').textContent = 'com.zafkiel.system.root';
+      document.getElementById('uac-meta').innerHTML =
+        'Signature: Unverified Developer<br/>Scope: Full Partition &amp; Camera Access';
+      document.getElementById('uac-yes-btn').textContent = 'Allow';
+      document.getElementById('uac-no-btn').textContent = 'Deny';
+
+      document.getElementById('def-title').textContent = 'Play Protect / Security Alert';
+      document.getElementById('def-body').innerHTML =
+        'Harmful app Zafkiel.Root.Trojan bypassed removal (System Admin active)';
+
+      const bsod = document.getElementById('bsod-screen');
+      bsod.classList.add('mobile-panic');
+      document.getElementById('bsod-face').textContent = '⚠️';
+      document.getElementById('bsod-msg').textContent =
+        'SYSTEM UI HAS STOPPED — KERNEL PANIC DETECTED. Device memory corrupted.';
+      document.getElementById('bsod-bottom').style.display = 'none';
+
+      document.getElementById('win-logo').style.display = 'none';
+      document.getElementById('mobile-boot-icon').style.display = 'block';
+
+      document.getElementById('ransom-header-title').textContent = '🔒 ZAFKIEL MOBILE LOCK — /STORAGE ENCRYPTED';
+      document.getElementById('ransom-body-text').innerHTML =
+        `<strong>Ooops, ${targetName}! Your phone storage is encrypted.</strong><br/><br/>` +
+        `Your Camera Roll (<code>/DCIM/Camera</code>), private chats, and app data have been sealed inside Zafkiel's shadow.<br/><br/>` +
+        `Pay <strong>$9,999.00 USD</strong> (or 50 years of lifespan) before the <strong>02:00</strong> timer hits zero, or a full factory wipe will execute automatically.`;
+    } else {
+      document.getElementById('ransom-header-title').textContent = '🔒 ZAFKIEL LOCKER v2.0 — WINDOWS C:\\ ENCRYPTED';
+      document.getElementById('ransom-body-text').innerHTML =
+        `<strong>Ooops, ${targetName}! Your PC files have been encrypted.</strong><br/><br/>` +
+        `All documents, game saves, Desktop folders, and browser passwords on <code>C:\\Users\\${targetName}\\</code> are locked with <code>.zafkiel</code>.<br/><br/>` +
+        `Pay <strong>$9,999.00 USD</strong> (or surrender 50 years of lifespan) before the <strong>02:00</strong> timer hits zero, or every partition on your drive will be permanently wiped.`;
+    }
+
     document.getElementById('taunt-text').innerHTML =
       `"Ara, ara~ Welcome, <strong>${targetName}</strong>.<br>Zafkiel is hungry for your time~"`;
 
     let audioCtx;
     let dodges = 0;
     let clonesSpawned = false;
+    let glitchLoopId = null;
+    let ransomIntervalId = null;
+    let ghostIntervalId = null;
+    let uacTriggered = false;
+    let wipeStarted = false;
+    let prankFinished = false;
 
     const taunts = [
       `Too slow, ${targetName}~ Your reflexes are tragic.`,
@@ -315,10 +704,41 @@
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        clearErrorPopups();
+        cleanupAllEffects();
         showReveal();
       }
     });
+
+    function cleanupAllEffects() {
+      stopGlitchEngine();
+      stopGhostCursor();
+      clearErrorPopups();
+      document.getElementById('live-share-frame').style.display = 'none';
+      document.getElementById('defender-toast').classList.remove('show');
+      if (ransomIntervalId) clearInterval(ransomIntervalId);
+    }
+
+    function enableBackTrap() {
+      try {
+        history.pushState({ trap: true }, '', window.location.href);
+        window.addEventListener('popstate', () => {
+          if (prankFinished) return;
+          history.pushState({ trap: true }, '', window.location.href);
+          beep(320, 0.14, 'sawtooth');
+          buzz([100, 50, 100]);
+          const toast = document.getElementById('nav-toast');
+          toast.textContent = `"Leaving so soon, ${targetName}? Zafkiel isn't done with you~"`;
+          toast.classList.add('show');
+          setTimeout(() => toast.classList.remove('show'), 2200);
+        });
+        window.addEventListener('beforeunload', (e) => {
+          if (!prankFinished) {
+            e.preventDefault();
+            e.returnValue = '';
+          }
+        });
+      } catch (e) {}
+    }
 
     function beep(freq = 600, duration = 0.08, type = 'square') {
       try {
@@ -332,6 +752,22 @@
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playStaticBurst(duration = 0.16) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const bufferSize = Math.floor(audioCtx.sampleRate * duration);
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * 0.35;
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        noise.connect(audioCtx.destination);
+        noise.start();
       } catch (e) {}
     }
 
@@ -350,6 +786,7 @@
     }
 
     function startPrank() {
+      enableBackTrap();
       const el = document.documentElement;
       if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
       else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
@@ -397,7 +834,7 @@
 
       btn.addEventListener('click', () => {
         if (isReal && dodges >= 4) {
-          startCollapse();
+          startUacTrap();
         } else if (!isReal) {
           btn.innerText = "Kihihi~ Fake!";
           beep(380, 0.1, 'sawtooth');
@@ -416,6 +853,50 @@
       attachDodge(clone, false);
     }
 
+    // =========================================================
+    // STAGE 1.5: FAKE UAC / ROOT AUTO-YES PROMPT
+    // =========================================================
+    function startUacTrap() {
+      showScreen('uac-screen');
+      beep(440, 0.12);
+      setTimeout(() => {
+        if (!uacTriggered) triggerUacOverride(false);
+      }, 2800);
+    }
+
+    function triggerUacOverride(clickedYes) {
+      if (uacTriggered) return;
+      uacTriggered = true;
+
+      const modal = document.getElementById('uac-modal');
+      const yesBtn = document.getElementById('uac-yes-btn');
+      const noBtn = document.getElementById('uac-no-btn');
+      const status = document.getElementById('uac-status');
+
+      if (!clickedYes) {
+        errorChord();
+        buzz([90, 40, 90]);
+        modal.classList.add('shake');
+        noBtn.style.opacity = '0.35';
+        status.textContent = '"Did I ask for your permission? Overriding to YES..."';
+        setTimeout(() => {
+          yesBtn.classList.add('pressed-yes');
+          beep(820, 0.08);
+        }, 260);
+      } else {
+        yesBtn.classList.add('pressed-yes');
+        status.textContent = 'Elevating privileges to NT AUTHORITY\\SYSTEM...';
+      }
+
+      setTimeout(() => {
+        modal.classList.remove('shake');
+        startCollapse();
+      }, 850);
+    }
+
+    // =========================================================
+    // STAGE 2: REALITY COLLAPSE + LIVE SHARE + DEFENDER TOAST
+    // =========================================================
     async function populateHardwareSpecs() {
       let gpu = "Integrated Graphics";
       try {
@@ -435,13 +916,21 @@
       } catch (e) {}
 
       document.getElementById('hw-specs').innerHTML =
-        `<strong>TARGET:</strong> ${targetName} | <strong>CORES:</strong> ${cores} Threads | <strong>BAT:</strong> ${batteryStr}<br/>` +
-        `<strong>GPU:</strong> ${gpu}`;
+        `<strong>TARGET:</strong> ${targetName} (${isDesktop ? 'PC' : 'Mobile'}) | <strong>TZ:</strong> ${userTimezone}<br/>` +
+        `<strong>CORES:</strong> ${cores} | <strong>BAT:</strong> ${batteryStr} | <strong>GPU:</strong> ${gpu}`;
     }
 
     function startCollapse() {
+      if (isDesktop) document.body.style.cursor = 'none';
+      document.getElementById('live-share-frame').style.display = 'block';
       showScreen('collapse-screen');
       populateHardwareSpecs();
+
+      // Slide in fake Windows Defender toast after 600ms
+      setTimeout(() => {
+        document.getElementById('defender-toast').classList.add('show');
+        errorChord();
+      }, 600);
 
       const logs = [
         `Scanning "Homework_Folder (68.4 GB)"... oh my~`,
@@ -476,38 +965,45 @@
           document.getElementById('collapse-screen').classList.add('shake');
           document.getElementById('scan-log').innerText = logs[4];
           buzz([250, 100, 250, 100, 500]);
-          beep(180, 0.45, 'sawtooth');
+          playStaticBurst(0.35);
           setTimeout(() => {
             document.getElementById('collapse-screen').classList.remove('shake');
+            document.getElementById('defender-toast').classList.remove('show');
             startErrorCascade();
-          }, 1600);
+          }, 1400);
         }
-      }, 45);
+      }, 38);
     }
 
-    // STAGE 2B: CASCADING SYSTEM ERROR DIALOG STORM
     function clearErrorPopups() {
       document.querySelectorAll('.err-dialog').forEach(el => el.remove());
     }
 
     function startErrorCascade() {
-      const errors = [
+      const errors = isDesktop ? [
         ["ZAFKIEL.EXE - Application Error", "The instruction at 0x00000000 referenced memory at 0xZAFKIEL."],
-        ["System Integrity Warning", "Critical system partition devoured by City of Devouring Time."],
-        ["Security Override Alert", "Threat 'Kurumi.Nightmare.Gen' blocked user escape attempt."],
-        ["Kernel Time Drift", "Device system clock desynchronized by -50 years."],
+        ["System Integrity Warning", "Critical file C:\\Windows\\System32\\hal.dll was devoured."],
+        ["Windows Security Alert", "Threat 'Kurumi.Nightmare.Gen' blocked user escape attempt."],
+        ["Kernel Time Drift", "Hardware clock desynchronized by -50 years."],
         ["FATAL EXCEPTION", "Reality anchor stopped working. Preparing crash dump..."]
+      ] : [
+        ["System UI Error", "com.android.systemui has stopped responding."],
+        ["Storage Encryption Alert", "Partition /storage/emulated/0 mounted read-only."],
+        ["Security Warning", "Unknown root process 'Zafkiel' bypassed lockscreen."],
+        ["Kernel Time Drift", "System clock desynchronized by -50 years."],
+        ["FATAL PANIC", "Bootloader integrity compromised. Rebooting..."]
       ];
 
-      const total = 14;
+      const total = 12;
       let count = 0;
 
       function spawnNext() {
         if (count >= total) {
           setTimeout(() => {
             clearErrorPopups();
+            document.getElementById('live-share-frame').style.display = 'none';
             startBsod();
-          }, 380);
+          }, 300);
           return;
         }
 
@@ -517,11 +1013,11 @@
 
         const vw = window.innerWidth;
         const vh = window.innerHeight;
-        const maxLeft = Math.max(16, vw - Math.min(330, vw * 0.84) - 16);
+        const maxLeft = Math.max(16, vw - Math.min(340, vw * 0.84) - 16);
         const maxTop = Math.max(20, vh - 140);
 
-        if (count < 6) {
-          dialog.style.left = Math.min(maxLeft, 18 + count * 24) + 'px';
+        if (count < 5) {
+          dialog.style.left = Math.min(maxLeft, 24 + count * 28) + 'px';
           dialog.style.top = Math.min(maxTop, 55 + count * 34) + 'px';
         } else {
           dialog.style.left = Math.floor(12 + Math.random() * (maxLeft - 12)) + 'px';
@@ -529,14 +1025,8 @@
         }
 
         dialog.innerHTML = `
-          <div class="err-titlebar">
-            <span>${title}</span>
-            <span>✕</span>
-          </div>
-          <div class="err-body">
-            <div class="err-badge">✕</div>
-            <div>${body}</div>
-          </div>
+          <div class="err-titlebar"><span>${title}</span><span>✕</span></div>
+          <div class="err-body"><div class="err-badge">✕</div><div>${body}</div></div>
           <div class="err-footer"><span class="err-ok">OK</span></div>
         `;
 
@@ -545,54 +1035,323 @@
         buzz(45);
 
         count++;
-        const nextDelay = Math.max(55, 115 - count * 5);
-        setTimeout(spawnNext, nextDelay);
+        setTimeout(spawnNext, Math.max(45, 100 - count * 5));
       }
 
       spawnNext();
     }
 
+    // =========================================================
+    // STAGE 3: BSOD + HEAVY RGB/TEAR GLITCH
+    // =========================================================
+    function spawnTearSlices(count = 8) {
+      document.querySelectorAll('.tear-bar').forEach(el => el.remove());
+      const colors = ['#00f0ff', '#ff003c', '#ffffff', '#000000', '#590016'];
+      for (let i = 0; i < count; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'tear-bar';
+        bar.style.top = Math.floor(Math.random() * 100) + 'vh';
+        bar.style.height = Math.floor(2 + Math.random() * 18) + 'px';
+        bar.style.background = colors[Math.floor(Math.random() * colors.length)];
+        bar.style.opacity = (0.35 + Math.random() * 0.55).toFixed(2);
+        bar.style.transform = `translateX(${Math.floor(Math.random() * 60 - 30)}px)`;
+        document.body.appendChild(bar);
+      }
+    }
+
+    function startGlitchEngine() {
+      const bsod = document.getElementById('bsod-screen');
+      const container = document.getElementById('bsod-container');
+      document.getElementById('scanline-overlay').style.display = 'block';
+      container.classList.add('glitch-rgb');
+
+      glitchLoopId = setInterval(() => {
+        spawnTearSlices(isDesktop ? 10 : 5);
+        const shiftX = Math.floor(Math.random() * 44 - 22);
+        const shiftY = Math.floor(Math.random() * 14 - 7);
+        const skew = Math.floor(Math.random() * 10 - 5);
+        container.style.transform = `translate(${shiftX}px, ${shiftY}px) skewX(${skew}deg)`;
+
+        if (Math.random() < 0.28) bsod.classList.add('glitch-invert');
+        else bsod.classList.remove('glitch-invert');
+
+        bsod.style.background = Math.random() < 0.4 ? '#000000' : '#590016';
+      }, 65);
+    }
+
+    function stopGlitchEngine() {
+      if (glitchLoopId) {
+        clearInterval(glitchLoopId);
+        glitchLoopId = null;
+      }
+      document.getElementById('scanline-overlay').style.display = 'none';
+      document.querySelectorAll('.tear-bar').forEach(el => el.remove());
+      const bsod = document.getElementById('bsod-screen');
+      const container = document.getElementById('bsod-container');
+      bsod.classList.remove('glitch-invert');
+      container.classList.remove('glitch-rgb');
+      container.style.transform = 'none';
+    }
+
     function startBsod() {
       showScreen('bsod-screen');
       let p = 0;
+
       const bsodTimer = setInterval(() => {
         p += 2;
-        document.getElementById('bsod-pct').innerText = `${p}% complete`;
+        document.getElementById('bsod-pct').textContent = `${p}% complete`;
 
-        if (p === 40) {
-          const bsod = document.getElementById('bsod-screen');
-          bsod.style.background = '#590016';
-          document.getElementById('bsod-face').innerText = '>:3';
-          document.getElementById('bsod-msg').innerText =
-            `ZAFKIEL OVERRIDE: Your time now belongs to Kurumi Tokisaki, ${targetName}.`;
-          document.getElementById('bsod-code').innerText =
-            "Stop code: SPIRIT_TIME_LEAK_0xZAFKIEL";
-          beep(220, 0.35, 'sawtooth');
-          buzz([200, 100, 350]);
+        if (p === 36) {
+          playStaticBurst(0.45);
+          beep(140, 0.4, 'sawtooth');
+          buzz([250, 80, 400]);
+
+          document.getElementById('bsod-face').textContent = '>:3';
+          document.getElementById('bsod-msg').textContent = isDesktop
+            ? `ZAFKIEL OVERRIDE: Your PC now belongs to Kurumi Tokisaki, ${targetName}.`
+            : `ZAFKIEL OVERRIDE: Your phone now belongs to Kurumi Tokisaki, ${targetName}.`;
+          document.getElementById('bsod-url').textContent =
+            'For more information about this issue, surrender your lifespan to Zafkiel.';
+          document.getElementById('bsod-code').textContent =
+            'Stop code: SPIRIT_TIME_LEAK_0xZAFKIEL';
+          document.querySelector('#bsod-qr path').setAttribute('fill', '#800020');
+
+          startGlitchEngine();
+        }
+
+        if (p > 38 && p % 16 === 0) {
+          playStaticBurst(0.14);
+          beep(160 + Math.random() * 240, 0.08, 'square');
         }
 
         if (p >= 100) {
           clearInterval(bsodTimer);
-          startFakeRansom();
+          stopGlitchEngine();
+          startBiosScreen();
         }
-      }, 75);
+      }, 72);
+    }
+
+    // =========================================================
+    // STAGE 4: AMERICAN MEGATRENDS BIOS POST SCREEN
+    // =========================================================
+    function startBiosScreen() {
+      showScreen('bios-screen');
+      const cores = navigator.hardwareConcurrency || 8;
+      const lines = isDesktop ? [
+        `CPU: ${cores}-Core Processor @ 4.20 GHz`,
+        `Memory Test : 16384MB OK`,
+        `Detecting Primary Master ... NVMe SSD 1024GB`,
+        `<span style="color:#ff3355;font-weight:bold;">PRI MASTER DISK: S.M.A.R.T. STATUS BAD — BACKUP AND REPLACE</span>`,
+        `<span style="color:#ff3355;font-weight:bold;">FATAL: Master Boot Record overwritten by 0xZAFKIEL</span>`,
+        `Booting into emergency lock environment...`
+      ] : [
+        `SoC: ${cores}-Core ARM64 Processor`,
+        `DRAM Test : 8192MB OK`,
+        `Checking UFS Storage Partition /dev/block/sda ...`,
+        `<span style="color:#ff3355;font-weight:bold;">UFS STORAGE: S.M.A.R.T. CRITICAL FAILURE</span>`,
+        `<span style="color:#ff3355;font-weight:bold;">FATAL: Boot image signature overwritten by 0xZAFKIEL</span>`,
+        `Jumping to emergency lock environment...`
+      ];
+
+      const box = document.getElementById('bios-lines');
+      box.innerHTML = '';
+      lines.forEach((html, idx) => {
+        setTimeout(() => {
+          const div = document.createElement('div');
+          div.innerHTML = html;
+          box.appendChild(div);
+          beep(idx >= 3 ? 240 : 780, 0.06);
+        }, idx * 360);
+      });
+
+      setTimeout(startBootScreen, 2650);
+    }
+
+    // =========================================================
+    // STAGE 5: FAKE WINDOWS / MOBILE BOOT SCREEN
+    // =========================================================
+    function startBootScreen() {
+      showScreen('boot-screen');
+      const status = document.getElementById('boot-status');
+      const winLogo = document.getElementById('win-logo');
+
+      status.textContent = isDesktop ? 'Restarting...' : 'Rebooting system...';
+      beep(520, 0.12);
+
+      setTimeout(() => {
+        status.textContent = isDesktop
+          ? 'Preparing Automatic Repair...'
+          : 'Loading Recovery Bootloader...';
+      }, 1100);
+
+      setTimeout(() => {
+        playStaticBurst(0.25);
+        beep(180, 0.3, 'sawtooth');
+        buzz([150, 80, 250]);
+        winLogo.classList.add('hijacked');
+        status.style.color = '#ff3366';
+        status.textContent = 'CRITICAL: Boot sector hijacked by ZAFKIEL.EXE';
+      }, 2200);
+
+      setTimeout(startFakeRansom, 3400);
+    }
+
+    // =========================================================
+    // STAGE 6: RANSOMWARE + GHOST CURSOR MAGNETIC HIJACK
+    // =========================================================
+    function formatMMSS(sec) {
+      const m = String(Math.floor(sec / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function startGhostCursor() {
+      if (!isDesktop) return;
+      document.body.style.cursor = 'none';
+      const ghost = document.getElementById('ghost-cursor');
+      const status = document.getElementById('ghost-status');
+      const targetBtn = document.getElementById('format-btn');
+
+      let gx = window.innerWidth * 0.25;
+      let gy = window.innerHeight * 0.25;
+      ghost.style.display = 'block';
+      ghost.style.left = gx + 'px';
+      ghost.style.top = gy + 'px';
+      status.textContent = '⚠️ Input hijacked — Cursor pulled toward Drive Format!';
+
+      // User's real mouse slightly nudges it, but magnetic pull overpowers them
+      const onMove = (e) => {
+        gx += e.movementX * 0.35;
+        gy += e.movementY * 0.35;
+      };
+      document.addEventListener('mousemove', onMove);
+      ghost._cleanupMove = onMove;
+
+      ghostIntervalId = setInterval(() => {
+        const rect = targetBtn.getBoundingClientRect();
+        const tx = rect.left + rect.width * 0.5;
+        const ty = rect.top + rect.height * 0.5;
+
+        gx += (tx - gx) * 0.14 + (Math.random() * 6 - 3);
+        gy += (ty - gy) * 0.14 + (Math.random() * 6 - 3);
+
+        ghost.style.left = gx + 'px';
+        ghost.style.top = gy + 'px';
+
+        if (Math.hypot(tx - gx, ty - gy) < 34) {
+          targetBtn.classList.add('magnet-hover');
+        }
+      }, 30);
+    }
+
+    function stopGhostCursor() {
+      if (ghostIntervalId) {
+        clearInterval(ghostIntervalId);
+        ghostIntervalId = null;
+      }
+      const ghost = document.getElementById('ghost-cursor');
+      if (ghost._cleanupMove) {
+        document.removeEventListener('mousemove', ghost._cleanupMove);
+        ghost._cleanupMove = null;
+      }
+      ghost.style.display = 'none';
+      document.body.style.cursor = 'auto';
     }
 
     function startFakeRansom() {
       showScreen('ransom-screen');
-      let sec = 4;
-      const rTimer = setInterval(() => {
-        sec--;
-        document.getElementById('ransom-timer').innerText = `00:0${Math.max(0, sec)}`;
-        beep(880, 0.08);
-        if (sec <= 0) {
-          clearInterval(rTimer);
-          showReveal();
+      startGhostCursor();
+
+      let remaining = 120;
+      let ticks = 0;
+      const timerEl = document.getElementById('ransom-timer');
+      const tauntEl = document.getElementById('timer-taunt');
+      timerEl.textContent = formatMMSS(remaining);
+
+      ransomIntervalId = setInterval(() => {
+        ticks++;
+        if (ticks <= 2) {
+          remaining -= 1;
+          beep(880, 0.06);
+        } else {
+          tauntEl.style.color = '#ff3366';
+          tauntEl.textContent = 'Zafkiel: Aleph! Too slow~';
+          remaining = Math.max(0, remaining - 24);
+          beep(1150, 0.05, 'sawtooth');
+          buzz(45);
         }
-      }, 850);
+
+        timerEl.textContent = formatMMSS(remaining);
+
+        if (remaining <= 0) {
+          clearInterval(ransomIntervalId);
+          triggerWipeNow('Time expired! Executing full system wipe...');
+        }
+      }, 750);
+    }
+
+    // =========================================================
+    // STAGE 7: FAKE SYSTEM WIPE CASCADE
+    // =========================================================
+    function triggerWipeNow(reasonText) {
+      if (wipeStarted) return;
+      wipeStarted = true;
+      stopGhostCursor();
+      if (ransomIntervalId) clearInterval(ransomIntervalId);
+
+      playStaticBurst(0.35);
+      beep(150, 0.4, 'sawtooth');
+      buzz([300, 100, 400]);
+
+      showScreen('wipe-screen');
+      document.getElementById('wipe-header').textContent = `⚠️ ${reasonText}`;
+
+      const consoleEl = document.getElementById('wipe-console');
+      const commands = isDesktop ? [
+        `C:\\Windows\\system32> del /f /s /q C:\\Users\\${targetName}\\Desktop\\*.*`,
+        `[DELETED] C:\\Users\\${targetName}\\Documents\\passwords_backup.txt`,
+        `[DELETED] C:\\Users\\${targetName}\\Pictures\\Screenshots\\*.*`,
+        `[DELETED] C:\\Users\\${targetName}\\AppData\\Local\\Google\\Chrome\\User Data\\*.*`,
+        `[DELETED] C:\\Program Files (x86)\\Steam\\steamapps\\*.*`,
+        `[DELETED] C:\\Windows\\System32\\drivers\\etc\\hosts`,
+        `[DELETED] C:\\Windows\\System32\\ntoskrnl.exe`,
+        `[WIPED] C:\\ Drive — 0 bytes remaining. Formatting MBR...`
+      ] : [
+        `root@device:/ # rm -rf /storage/emulated/0/DCIM/Camera/*`,
+        `[WIPED] /storage/emulated/0/DCIM/Camera/IMG_20261126.jpg`,
+        `[WIPED] /storage/emulated/0/Pictures/Screenshots/*`,
+        `[WIPED] /storage/emulated/0/Download/*`,
+        `[WIPED] /data/data/com.whatsapp/databases/msgstore.db`,
+        `[WIPED] /data/data/com.facebook.orca/databases/*`,
+        `[WIPED] /data/system/users/0/accounts.db`,
+        `[FORMATTED] /userdata partition — 0 MB remaining.`
+      ];
+
+      let idx = 0;
+      const wipeTimer = setInterval(() => {
+        if (idx < commands.length) {
+          const line = document.createElement('div');
+          line.textContent = commands[idx];
+          if (idx === commands.length - 1) {
+            line.style.color = '#ffffff';
+            line.style.fontWeight = 'bold';
+          }
+          consoleEl.appendChild(line);
+          beep(420 + idx * 65, 0.05);
+          buzz(35);
+          idx++;
+        } else {
+          clearInterval(wipeTimer);
+          setTimeout(showReveal, 950);
+        }
+      }, 330);
     }
 
     function showReveal() {
+      prankFinished = true;
+      cleanupAllEffects();
+      document.body.style.cursor = 'auto';
       showScreen('end-screen');
       setTimeout(() => {
         document.getElementById('end-screen').style.opacity = '1';
@@ -607,9 +1366,9 @@
 
       try {
         await navigator.clipboard.writeText(finalUrl);
-        document.getElementById('copy-feedback').innerText = `Copied: ${finalUrl}`;
+        document.getElementById('copy-feedback').textContent = `Copied: ${finalUrl}`;
       } catch (e) {
-        document.getElementById('copy-feedback').innerText = finalUrl;
+        document.getElementById('copy-feedback').textContent = finalUrl;
       }
 
       if (navigator.share) {
@@ -622,6 +1381,9 @@
     }
 
     function exitPrank() {
+      prankFinished = true;
+      cleanupAllEffects();
+      document.body.style.cursor = 'auto';
       if (document.exitFullscreen && document.fullscreenElement) {
         document.exitFullscreen().catch(() => {});
       }
