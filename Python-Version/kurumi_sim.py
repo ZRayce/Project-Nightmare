@@ -71,7 +71,6 @@ class ZafkielAudio:
         return self._pack_wav(samples)
 
     def _build_usb_disconnect(self) -> bytes:
-        # Descending two-tone Windows USB unplug chime (D5 -> A4)
         total = int(self.sr * 0.22)
         half = total // 2
         samples = []
@@ -139,7 +138,7 @@ class KurumiFinalNightmare:
         self.uac_triggered = False
         self.gif_after_id = None
         self.desktop_shot = None
-        self.tile_refs = []
+        self.strip_refs = []
         self.error_popups = []
         self.tear_bars = []
         self.glitch_active = False
@@ -156,7 +155,6 @@ class KurumiFinalNightmare:
 
         self.gif_path = resource_path(os.path.join("assets", "tokisaki-kurumi.gif"))
 
-        # Global emergency kill switch across all windows and widgets
         self.root.bind_all("<Escape>", lambda e: self.cleanup_and_exit())
 
         self.load_gif_frames()
@@ -165,6 +163,11 @@ class KurumiFinalNightmare:
 
     def cleanup_and_exit(self):
         self.stop_ghost_cursor()
+        for pop in self.error_popups:
+            try:
+                pop.destroy()
+            except Exception:
+                pass
         try:
             self.root.destroy()
         except Exception:
@@ -226,7 +229,6 @@ class KurumiFinalNightmare:
         self.btn_stop.place(x=190, y=155)
         self.btn_stop.bind("<Enter>", self.handle_hover)
 
-        # Auto-detonate after 2.5 seconds if user freezes
         self.root.after(2500, lambda: self.start_uac_trap() if self.win.winfo_exists() else None)
 
     def troll_close_button(self):
@@ -348,7 +350,7 @@ class KurumiFinalNightmare:
                 yes_btn.config(bg="#0078d7")
                 status_lbl.config(text="Elevating privileges to NT AUTHORITY\\SYSTEM...")
 
-            self.root.after(760, self.start_desktop_vortex)
+            self.root.after(760, self.start_desktop_melt)
 
         yes_btn = tk.Button(
             btn_row, text="Yes", bg="#333333", fg="white",
@@ -368,9 +370,9 @@ class KurumiFinalNightmare:
         self.root.after(2400, lambda: override_uac(False))
 
     # =========================================================
-    # STAGE 2A: LIVE DESKTOP BLACK-HOLE SPIRAL VORTEX
+    # STAGE 2A: 90s MELT.EXE DRIPPING DESKTOP ILLUSION
     # =========================================================
-    def start_desktop_vortex(self):
+    def start_desktop_melt(self):
         for w in self.fs.winfo_children():
             w.destroy()
 
@@ -400,62 +402,55 @@ class KurumiFinalNightmare:
         )
         self.canvas.pack(fill="both", expand=True)
 
-        cx = self.vw / 2.0
-        cy = self.vh / 2.0
-        cols, rows = 8, 6
-        tile_w = self.vw // cols
-        tile_h = self.vh // rows
-        tiles = []
-        self.tile_refs.clear()
+        cols = 52
+        col_w = max(1, self.vw // cols)
+        strips = []
+        self.strip_refs.clear()
 
-        for r in range(rows):
-            for c in range(cols):
-                x1 = c * tile_w
-                y1 = r * tile_h
-                x2 = self.vw if c == cols - 1 else (c + 1) * tile_w
-                y2 = self.vh if r == rows - 1 else (r + 1) * tile_h
+        for c in range(cols):
+            x1 = c * col_w
+            x2 = self.vw if c == cols - 1 else (c + 1) * col_w
+            crop = shot.crop((x1, 0, x2, self.vh))
+            tk_strip = ImageTk.PhotoImage(crop)
+            self.strip_refs.append(tk_strip)
 
-                crop = shot.crop((x1, y1, x2, y2))
-                tk_tile = ImageTk.PhotoImage(crop)
-                self.tile_refs.append(tk_tile)
+            item_id = self.canvas.create_image(x1, 0, anchor="nw", image=tk_strip)
+            # Wave-shaped drip speeds across the screen like classic Melt.exe
+            wave_boost = abs(math.sin(c * 0.25)) * 18
+            strips.append(
+                {
+                    "id": item_id,
+                    "y": 0.0,
+                    "dy": random.uniform(8.0, 22.0) + wave_boost,
+                    "accel": random.uniform(1.4, 2.8),
+                }
+            )
 
-                tx = x1 + (x2 - x1) / 2.0
-                ty = y1 + (y2 - y1) / 2.0
-                radius = math.hypot(tx - cx, ty - cy)
-                angle = math.atan2(ty - cy, tx - cx)
+        def animate_melt(step=0):
+            active = False
+            for s in strips:
+                if s["y"] > self.vh + 40:
+                    continue
+                active = True
+                s["dy"] += s["accel"]
+                s["y"] += s["dy"]
+                self.canvas.move(s["id"], 0, s["dy"])
 
-                item_id = self.canvas.create_image(tx, ty, anchor="center", image=tk_tile)
-                tiles.append(
-                    {
-                        "id": item_id,
-                        "radius": radius,
-                        "angle": angle,
-                        "spin": random.uniform(0.11, 0.19),
-                    }
-                )
+            if step in (8, 18):
+                self.audio.play("glitch")
 
-        def animate_vortex(step=0):
-            if step < 34:
-                for t in tiles:
-                    t["angle"] += t["spin"]
-                    t["radius"] *= 0.89
-                    nx = cx + t["radius"] * math.cos(t["angle"])
-                    ny = cy + t["radius"] * math.sin(t["angle"])
-                    self.canvas.coords(t["id"], nx, ny)
-
-                if step in (8, 18):
-                    self.audio.play("glitch")
-                self.root.after(24, lambda: animate_vortex(step + 1))
+            if active and step < 36:
+                self.root.after(24, lambda: animate_melt(step + 1))
             else:
                 self.canvas.destroy()
-                self.tile_refs.clear()
+                self.strip_refs.clear()
                 self.desktop_shot = None
                 self.start_collapse_ui()
 
-        animate_vortex(0)
+        animate_melt(0)
 
     # =========================================================
-    # STAGE 2B: CITY OF DEVOURING TIME + ZAFKIEL CLOCK + DALET REWIND
+    # STAGE 2B: CITY OF DEVOURING TIME + ZAFKIEL CLOCK + STREAM CHAT
     # =========================================================
     def start_collapse_ui(self):
         primary_w = self.fs.winfo_screenwidth()
@@ -467,7 +462,6 @@ class KurumiFinalNightmare:
         px0 = -self.vx
         py0 = -self.vy
 
-        # Spinning Roman Numeral Zafkiel Clock Canvas behind UI
         self.clock_canvas = tk.Canvas(
             self.fs, width=primary_w, height=primary_h, bg="black", highlightthickness=0
         )
@@ -501,7 +495,6 @@ class KurumiFinalNightmare:
                     nx, ny, text=num, fill="#7a5e14", font=("Times New Roman", 16, "bold")
                 )
 
-            # Clock hands
             ha = math.radians(deg * 2.5)
             self.clock_canvas.create_line(
                 ccx, ccy, ccx + (r_inner - 20) * math.cos(ha), ccy + (r_inner - 20) * math.sin(ha),
@@ -511,7 +504,6 @@ class KurumiFinalNightmare:
 
         draw_zafkiel_clock(0)
 
-        # Glowing red screen-share border & pill
         self.live_borders = [
             tk.Frame(self.fs, bg="#ff1a40", height=4, width=primary_w),
             tk.Frame(self.fs, bg="#ff1a40", height=4, width=primary_w),
@@ -534,6 +526,9 @@ class KurumiFinalNightmare:
             pady=4,
         )
         self.live_pill.place(x=px0 + (primary_w - 360) // 2, y=py0 + 10, width=360)
+
+        # Live Stream Chat Box docked bottom-left
+        self.spawn_stream_chat(px0, py0, primary_h)
 
         self.center_frame = tk.Frame(self.fs, bg="black")
         self.center_frame.place(x=self.base_x, y=self.base_y, width=panel_w, height=panel_h)
@@ -617,6 +612,46 @@ class KurumiFinalNightmare:
         self.root.after(2400, lambda: self.spawn_dm_toast(px0, py0, primary_w, primary_h))
 
         self.run_fake_deletion(px0, py0)
+
+    def spawn_stream_chat(self, px0, py0, primary_h):
+        chat_box = tk.Frame(self.fs, bg="#0e0f14", highlightbackground="#3d0013", highlightthickness=1)
+        chat_box.place(x=px0 + 18, y=py0 + primary_h - 235, width=265, height=205)
+
+        head = tk.Frame(chat_box, bg="#2b000b", height=24)
+        head.pack(fill="x")
+        tk.Label(head, text=" 🔴 STREAM CHAT", fg="#ff8099", bg="#2b000b", font=("Segoe UI", 8, "bold")).pack(side="left")
+        tk.Label(head, text="47 watching ", fg="#ff8099", bg="#2b000b", font=("Segoe UI", 8)).pack(side="right")
+
+        feed = tk.Frame(chat_box, bg="#0e0f14")
+        feed.pack(fill="both", expand=True, padx=8, pady=6)
+
+        messages = [
+            ("SpiritWatch", "#ff4d6d", "NO WAY HE OPENED IT 💀"),
+            ("xX_Shido_Xx", "#60a5fa", "BRO UNPLUG YOUR PC RN"),
+            ("NightmareBot", "#facc15", "W KURUMI >:3"),
+            ("Anon_404", "#34d399", f"RIP {self.victim_user}'s C:\\ drive 😭"),
+            ("ZafkielMod", "#c084fc", "47 people watching this live"),
+            ("ClockEye", "#fb7185", "dont look at your webcam led 👀"),
+        ]
+
+        idx = [0]
+
+        def add_chat_line():
+            if not feed.winfo_exists():
+                return
+            user, col, text = messages[idx[0] % len(messages)]
+            row = tk.Frame(feed, bg="#0e0f14")
+            row.pack(fill="x", pady=1)
+            tk.Label(row, text=f"{user}: ", fg=col, bg="#0e0f14", font=("Segoe UI", 8, "bold")).pack(side="left")
+            tk.Label(row, text=text, fg="#e5e7eb", bg="#0e0f14", font=("Segoe UI", 8)).pack(side="left")
+
+            children = feed.winfo_children()
+            if len(children) > 6:
+                children[0].destroy()
+            idx[0] += 1
+            self.root.after(620, add_chat_line)
+
+        add_chat_line()
 
     def flash_camera_shutter(self, px0, py0, primary_w, primary_h):
         if not self.fs.winfo_exists():
@@ -743,7 +778,6 @@ class KurumiFinalNightmare:
                     self.roast_label.config(text=fake_logs[idx])
                     self.toast_label.config(text=toast_logs[min(idx, len(toast_logs) - 1)])
 
-                # FOURTH BULLET: DALET (Rewind from 99% back to 45% once)
                 if p == 99 and not dalet_done[0]:
                     dalet_done[0] = True
                     self.clock_dir[0] = -6
@@ -786,8 +820,48 @@ class KurumiFinalNightmare:
         self.root.after(35, lambda: self.shake_screen(count - 1, on_done))
 
     # =========================================================
-    # STAGE 2C: ERROR POPUP CASCADE + SPOOFED TASK MANAGER
+    # STAGE 2C: ERROR CASCADE + STICKY NOTES >:3 FACE + TASK MGR
     # =========================================================
+    def spawn_sticky_notes_face(self):
+        primary_w = self.fs.winfo_screenwidth()
+        primary_h = self.fs.winfo_screenheight()
+        cx = primary_w // 2
+        cy = primary_h // 2
+
+        # Coordinates arranged in a giant > : 3 grin across the primary screen
+        notes = [
+            (cx - 260, cy - 170, "  >  \n\nYOUR FILES ARE\nMINE NOW~"),
+            (cx + 90,  cy - 170, "  <  \n\nTIME IS UP,\nSHIDO-SAN~"),
+            (cx - 85,  cy - 70,  "  :  \n\nNO ESCAPE!"),
+            (cx - 170, cy + 75,  "  3  \n\nARA ARA~"),
+            (cx + 10,  cy + 75,  "  3  \n\nKIHIHI~"),
+        ]
+
+        for nx, ny, txt in notes:
+            note = tk.Toplevel(self.fs)
+            note.overrideredirect(True)
+            note.attributes("-topmost", True)
+            note.configure(bg="#fff275", highlightbackground="#d4c035", highlightthickness=1)
+
+            px = max(20, min(primary_w - 190, nx))
+            py = max(20, min(primary_h - 160, ny))
+            note.geometry(f"175x145+{px}+{py}")
+
+            bar = tk.Frame(note, bg="#e6d545", height=20)
+            bar.pack(fill="x")
+            tk.Label(bar, text="  Sticky Note", fg="#5c5200", bg="#e6d545", font=("Segoe UI", 8, "bold")).pack(side="left")
+
+            tk.Label(
+                note,
+                text=txt,
+                fg="#222000",
+                bg="#fff275",
+                font=("Comic Sans MS", 10, "bold"),
+                justify="center",
+            ).pack(fill="both", expand=True, padx=8, pady=6)
+
+            self.error_popups.append(note)
+
     def spawn_fake_task_manager(self):
         primary_w = self.fs.winfo_screenwidth()
         primary_h = self.fs.winfo_screenheight()
@@ -824,6 +898,7 @@ class KurumiFinalNightmare:
         self.error_popups.append(tm)
 
     def trigger_error_cascade(self):
+        self.spawn_sticky_notes_face()
         self.spawn_fake_task_manager()
 
         error_messages = [
@@ -836,11 +911,11 @@ class KurumiFinalNightmare:
 
         primary_w = self.fs.winfo_screenwidth()
         primary_h = self.fs.winfo_screenheight()
-        total_popups = 12
+        total_popups = 10
 
         def spawn_popup(idx):
             if idx >= total_popups:
-                self.root.after(320, self.trigger_bsod)
+                self.root.after(420, self.trigger_bsod)
                 return
 
             title, body = error_messages[idx % len(error_messages)]
@@ -850,13 +925,8 @@ class KurumiFinalNightmare:
             pop.configure(bg="#1f1f1f", highlightbackground="#ff2a55", highlightthickness=1)
 
             w, h = 360, 135
-            if idx < 5:
-                px = 140 + (idx * 42)
-                py = 110 + (idx * 34)
-            else:
-                px = random.randint(60, max(100, primary_w - w - 60))
-                py = random.randint(60, max(100, primary_h - h - 60))
-
+            px = random.randint(50, max(100, primary_w - w - 50))
+            py = random.randint(50, max(100, primary_h - h - 50))
             pop.geometry(f"{w}x{h}+{px}+{py}")
 
             bar = tk.Frame(pop, bg="#66001a", height=26)
@@ -978,7 +1048,6 @@ class KurumiFinalNightmare:
                     self.glitch_active = True
                     run_rgb_glitch()
 
-                # SEVENTH BULLET: ZAYIN (Dead-silent monochrome time freeze at 58%)
                 if p == 58 and not zayin_done[0]:
                     zayin_done[0] = True
                     self.glitch_active = False
@@ -1018,7 +1087,6 @@ class KurumiFinalNightmare:
                     self.root.after(1450, unfreeze)
                     return
 
-                # TWELFTH BULLET: YUD BET (Retro Windows 98 flash at 82%)
                 if p == 82 and not yud_bet_done[0]:
                     yud_bet_done[0] = True
                     self.audio.play("alarm")
@@ -1318,7 +1386,6 @@ class KurumiFinalNightmare:
             pady=10,
         ).pack(anchor="nw")
 
-        # Possessed keyboard entry box
         possessed_entry = tk.Entry(
             right_col,
             bg="#1a0007",
@@ -1349,7 +1416,7 @@ class KurumiFinalNightmare:
         btn_row = tk.Frame(right_col, bg="#140005")
         btn_row.pack(fill="x", pady=(10, 0))
 
-        pay_btn = tk.Button(
+        tk.Button(
             btn_row,
             text="Verify Payment",
             bg="#cc0022",
@@ -1358,8 +1425,7 @@ class KurumiFinalNightmare:
             relief="flat",
             pady=7,
             command=lambda: self.start_fake_wipe("Payment verification failed! Initiating immediate wipe..."),
-        )
-        pay_btn.pack(side="left", fill="x", expand=True, padx=(0, 4))
+        ).pack(side="left", fill="x", expand=True, padx=(0, 4))
 
         format_btn = tk.Button(
             btn_row,
@@ -1476,12 +1542,107 @@ class KurumiFinalNightmare:
                 self.audio.play("tick" if idx % 2 == 0 else "tock")
                 self.root.after(300, lambda: print_line(idx + 1))
             else:
-                self.root.after(950, self.show_thank_you_screen)
+                self.root.after(850, self.start_double_cross)
 
         print_line(0)
 
     # =========================================================
-    # STAGE 8: CINEMATIC FADE-IN REVEAL
+    # STAGE 7.5: FAKE REVEAL DOUBLE-CROSS + CRT TV TURN-OFF
+    # =========================================================
+    def start_double_cross(self):
+        for widget in self.fs.winfo_children():
+            widget.destroy()
+
+        self.fs.configure(bg="black")
+        box = tk.Frame(self.fs, bg="black")
+        box.place(x=self.base_x, y=self.base_y, width=640, height=470)
+
+        title = tk.Label(
+            box,
+            text="Just kidding! It was a prank! 😄",
+            fg="#10b981",
+            bg="black",
+            font=("Segoe UI", 28, "bold"),
+        )
+        title.pack(pady=(160, 12))
+
+        sub = tk.Label(
+            box,
+            text="Relax, your files are completely safe—",
+            fg="#cccccc",
+            bg="black",
+            font=("Segoe UI", 14),
+        )
+        sub.pack()
+
+        self.audio.play("clone")
+
+        def betray():
+            if not self.fs.winfo_exists():
+                return
+            self.fs.configure(bg="#590016")
+            box.configure(bg="#590016")
+            title.configure(
+                text="JUST KIDDING ABOUT THE JUST KIDDING >:3",
+                fg="white",
+                bg="#590016",
+                font=("Consolas", 21, "bold"),
+            )
+            sub.configure(
+                text="FINALIZING SOUL EXTRACTION — SAY GOODBYE~",
+                fg="#ffccd5",
+                bg="#590016",
+                font=("Consolas", 13, "bold"),
+            )
+            self.audio.play("alarm")
+            self.root.after(1200, self.play_crt_turn_off)
+
+        self.root.after(1350, betray)
+
+    def play_crt_turn_off(self):
+        for widget in self.fs.winfo_children():
+            widget.destroy()
+
+        self.fs.configure(bg="black")
+        primary_w = self.fs.winfo_screenwidth()
+        primary_h = self.fs.winfo_screenheight()
+        px0 = -self.vx
+        py0 = -self.vy
+
+        beam = tk.Frame(self.fs, bg="white")
+        beam.place(x=px0, y=py0, width=primary_w, height=primary_h)
+        self.audio.play("glitch")
+
+        def collapse_v(h):
+            if not beam.winfo_exists():
+                return
+            if h > 6:
+                nh = max(6, int(h * 0.52))
+                beam.place(x=px0, y=py0 + (primary_h - nh) // 2, width=primary_w, height=nh)
+                self.root.after(22, lambda: collapse_v(nh))
+            else:
+                collapse_h(primary_w)
+
+        def collapse_h(w):
+            if not beam.winfo_exists():
+                return
+            if w > 8:
+                nw = max(8, int(w * 0.48))
+                beam.place(
+                    x=px0 + (primary_w - nw) // 2,
+                    y=py0 + (primary_h - 6) // 2,
+                    width=nw,
+                    height=6,
+                )
+                self.root.after(22, lambda: collapse_h(nw))
+            else:
+                beam.destroy()
+                self.root.after(120, self.show_thank_you_screen)
+
+        collapse_v(primary_h)
+
+    # =========================================================
+    # STAGE 8: CINEMATIC FADE-IN TRUE REVEAL
     # =========================================================
     def show_thank_you_screen(self):
         self.stop_ghost_cursor()

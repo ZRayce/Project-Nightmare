@@ -20,7 +20,7 @@
     }
     .active { display: flex; }
 
-    /* GLOBAL VISUAL EFFECTS: CAMERA SHUTTER, TIME FREEZE, CRACKED GLASS */
+    /* GLOBAL EFFECTS: SHUTTER, TIME FREEZE, CRACKED GLASS, CRT TURN-OFF */
     #shutter-flash {
       position: fixed; inset: 0; background: #ffffff;
       opacity: 0; pointer-events: none; z-index: 250;
@@ -41,6 +41,23 @@
       transform: translate(-50%, -50%);
     }
 
+    #crt-overlay {
+      position: fixed; inset: 0; background: #000;
+      z-index: 260; display: none; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    #crt-beam {
+      width: 100vw; height: 100vh; background: #ffffff;
+      box-shadow: 0 0 35px #ffffff, 0 0 70px #ff4d6d;
+    }
+    @keyframes crtOff {
+      0%   { transform: scale(1, 1); opacity: 1; }
+      45%  { transform: scale(1, 0.006); opacity: 1; }
+      80%  { transform: scale(0.015, 0.006); opacity: 1; }
+      100% { transform: scale(0, 0); opacity: 0; }
+    }
+    .crt-animate { animation: crtOff 0.55s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+
     /* STAGE 0: BAIT SCREEN */
     #bait-screen { background: #11131a; }
     .bait-card {
@@ -54,7 +71,7 @@
       font-size: 16px; font-weight: bold; cursor: pointer;
     }
 
-    /* TOP & SIDE TOASTS (NAV LOCK, USB DISCONNECT, GROUP CHAT DM, DEFENDER) */
+    /* TOP & SIDE TOASTS */
     #nav-toast {
       position: fixed; top: -70px; left: 50%; transform: translateX(-50%);
       background: #4d0013; border: 1px solid #ff3366; color: #fff;
@@ -94,6 +111,28 @@
       z-index: 110; transition: right 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     }
     #defender-toast.show { right: 18px; }
+
+    /* LIVE STREAM CHAT BOX */
+    #stream-chat {
+      position: fixed; bottom: 16px; left: 16px;
+      width: 245px; max-height: 210px;
+      background: rgba(14, 15, 20, 0.88);
+      border: 1px solid #3d0013; border-radius: 8px;
+      font-family: 'Segoe UI', sans-serif; text-align: left;
+      z-index: 92; display: none; flex-direction: column;
+      overflow: hidden; box-shadow: 0 10px 28px rgba(0,0,0,0.85);
+    }
+    @media (max-width: 720px) {
+      #stream-chat { width: 190px; max-height: 125px; bottom: 10px; left: 10px; font-size: 10.5px; }
+    }
+    .stream-chat-head {
+      background: #2b000b; padding: 5px 10px; font-size: 11px;
+      font-weight: 700; color: #ff8099; display: flex; justify-content: space-between;
+    }
+    #stream-chat-feed {
+      padding: 8px 10px; font-size: 11.5px; line-height: 1.4;
+      display: flex; flex-direction: column; gap: 4px; overflow: hidden;
+    }
 
     /* STAGE 1: FAST TIME TRAP */
     #trap-screen { background: rgba(0, 0, 0, 0.95); }
@@ -167,7 +206,7 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* STAGE 2: CITY OF DEVOURING TIME + SPINNING ZAFKIEL CLOCK */
+    /* STAGE 2: CITY OF DEVOURING TIME + ZAFKIEL CLOCK */
     #collapse-screen { background: #000; font-family: 'Courier New', monospace; }
     #zafkiel-clock-bg {
       position: fixed; top: 50%; left: 50%;
@@ -177,8 +216,7 @@
       animation: spinClock 24s linear infinite;
     }
     #zafkiel-clock-bg.rewind {
-      animation: spinClockRev 1.6s linear infinite;
-      opacity: 0.48;
+      animation: spinClockRev 1.6s linear infinite; opacity: 0.48;
     }
     @keyframes spinClock { to { transform: translate(-50%, -50%) rotate(360deg); } }
     @keyframes spinClockRev { to { transform: translate(-50%, -50%) rotate(-360deg); } }
@@ -365,7 +403,7 @@
     @keyframes spinDot { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     #boot-status { font-size: 16px; color: #e0e0e0; font-weight: 300; letter-spacing: 0.3px; }
 
-    /* STAGE 6: RANSOMWARE LOCKOUT + POSSESSED KEYBOARD + GHOST CURSOR */
+    /* STAGE 6: RANSOMWARE LOCKOUT */
     #ransom-screen { background: #290009; font-family: 'Segoe UI', sans-serif; }
     .ransom-panel {
       width: 95%; max-width: 730px; background: #140005;
@@ -436,17 +474,48 @@
       font-size: clamp(11px, 1.5vw, 14px); line-height: 1.55; color: #ff6680;
     }
 
-    /* STAGE 8: REVEAL & SHARE */
-    #end-screen { background: #000; opacity: 0; transition: opacity 1.2s ease-in; overflow-y: auto; }
+    /* STAGE 7.5: FAKE REVEAL DOUBLE-CROSS */
+    #doublecross-screen { background: #000; transition: background 0.1s; }
+
+    /* STAGE 8: TRUE REVEAL & LIVE LINK BUILDER */
+    #end-screen { background: #000; opacity: 0; transition: opacity 1.0s ease-in; overflow-y: auto; }
     .share-card {
       background: #14161f; border: 1px solid #2c3142;
-      border-radius: 10px; padding: 16px; max-width: 420px; width: 100%; margin-top: 10px;
+      border-radius: 12px; padding: 16px; max-width: 440px; width: 100%;
+      margin-top: 10px; text-align: left;
     }
-    .share-input {
-      width: 100%; padding: 10px; border-radius: 6px;
+    .builder-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;
+    }
+    @media (max-width: 420px) {
+      .builder-grid { grid-template-columns: 1fr; }
+    }
+    .builder-label {
+      display: block; font-size: 11px; color: #a0a6b8;
+      margin-bottom: 4px; font-weight: 600;
+    }
+    .share-input, .share-select {
+      width: 100%; padding: 9px 10px; border-radius: 6px;
       border: 1px solid #3a4055; background: #0b0d12; color: #fff;
-      margin: 8px 0; font-size: 14px; user-select: text; -webkit-user-select: text;
+      font-size: 13px; user-select: text; -webkit-user-select: text;
     }
+    .share-select { cursor: pointer; }
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #1b060d; border: 1px solid #590016;
+      padding: 9px 12px; border-radius: 6px; margin-top: 10px;
+      cursor: pointer; font-size: 12.5px; color: #ffccd5;
+    }
+    .toggle-row input {
+      width: 17px; height: 17px; accent-color: #ff3366; cursor: pointer;
+    }
+    .url-preview {
+      width: 100%; margin-top: 10px; padding: 8px 10px;
+      background: #08090d; border: 1px dashed #3a4055; border-radius: 6px;
+      color: #7dd3fc; font-family: 'Courier New', monospace; font-size: 11.5px;
+      user-select: all; -webkit-user-select: all;
+    }
+
     .shake { animation: shake 0.14s infinite; }
     @keyframes shake {
       0% { transform: translate(2px, 1px); }
@@ -463,12 +532,24 @@
   <div id="nav-toast"></div>
   <div id="usb-toast"></div>
 
+  <!-- CRT TV TURN-OFF OVERLAY -->
+  <div id="crt-overlay"><div id="crt-beam"></div></div>
+
   <!-- LIVE SCREEN SHARE OVERLAY -->
   <div id="live-share-frame">
     <div class="live-pill">
       <span class="rec-dot"></span>
       <span>LIVE — Sharing Screen to Public Channel (47 viewers)</span>
     </div>
+  </div>
+
+  <!-- LIVE STREAM CHAT FEED -->
+  <div id="stream-chat">
+    <div class="stream-chat-head">
+      <span>🔴 STREAM CHAT</span>
+      <span>47 watching</span>
+    </div>
+    <div id="stream-chat-feed"></div>
   </div>
 
   <!-- FAKE GROUP CHAT DM TOAST -->
@@ -570,7 +651,6 @@
 
   <!-- STAGE 2: REALITY COLLAPSE + ZAFKIEL CLOCK -->
   <div id="collapse-screen" class="screen">
-    <!-- Spinning Roman Numeral Zafkiel Clock SVG -->
     <svg id="zafkiel-clock-bg" viewBox="0 0 300 300">
       <circle cx="150" cy="150" r="140" fill="none" stroke="#d4af37" stroke-width="4"/>
       <circle cx="150" cy="150" r="115" fill="none" stroke="#ff1a40" stroke-width="2" stroke-dasharray="6 4"/>
@@ -721,28 +801,70 @@
     <div id="wipe-console"></div>
   </div>
 
-  <!-- STAGE 8: REVEAL & MANUAL SHARE -->
+  <!-- STAGE 7.5: FAKE REVEAL DOUBLE-CROSS -->
+  <div id="doublecross-screen" class="screen">
+    <h1 id="dc-title" style="color: #10b981; font-family: 'Segoe UI', sans-serif; font-size: clamp(28px, 6vw, 46px); margin: 0;">
+      Just kidding! It was a prank! 😄
+    </h1>
+    <p id="dc-sub" style="color: #cccccc; font-size: 16px; max-width: 440px; margin-top: 10px;">
+      Relax, your files are completely safe—
+    </p>
+  </div>
+
+  <!-- STAGE 8: TRUE REVEAL & LIVE LINK BUILDER -->
   <div id="end-screen" class="screen">
     <h1 style="color: #ff3366; font-family: monospace; font-size: clamp(32px, 8vw, 54px); margin: 0;">
       ARA ARA~!
     </h1>
-    <p id="reveal-msg" style="max-width: 440px; color: #ddd; line-height: 1.5; margin: 12px 0;">
+    <p id="reveal-msg" style="max-width: 440px; color: #ddd; line-height: 1.5; margin: 10px 0;">
       You got pranked by <strong>Kurumi Tokisaki</strong>! Relax—zero files were encrypted or deleted, your screen was never broadcast, and your device is 100% safe.
     </p>
 
     <div class="share-card">
-      <div style="font-weight: bold; color: #ff4d6d; font-size: 15px;">Want to trap a friend next?</div>
-      <p style="font-size: 12px; color: #a0a6b8; margin: 4px 0 8px;">
-        Enter their name to generate a personalized bait link:
-      </p>
-      <input type="text" id="friend-name" class="share-input" placeholder="e.g. Shido (optional)" />
-      <button class="bait-btn" style="margin-top: 6px; background: #ff3366;" onclick="shareCustomLink()">
+      <div style="font-weight: bold; color: #ff4d6d; font-size: 15px; text-align: center;">
+        🕸️ Custom Prank Link Builder
+      </div>
+
+      <div style="margin-top: 10px;">
+        <label class="builder-label" for="bait-page">Link Preview Disguise (Discord / Messenger)</label>
+        <select id="bait-page" class="share-select" onchange="buildCustomUrl()">
+          <option value="trial.html">✨ 30-Day VIP Free Trial (trial.html)</option>
+          <option value="gift.html">🎁 Mystery Gift (gift.html)</option>
+          <option value="album.html">📸 Shared Photo Album (album.html)</option>
+          <option value="index.html">⚠️ Direct Trap (index.html)</option>
+        </select>
+      </div>
+
+      <div class="builder-grid">
+        <div>
+          <label class="builder-label" for="friend-name">Target Name (?to=)</label>
+          <input type="text" id="friend-name" class="share-input" placeholder="e.g. Alex" oninput="buildCustomUrl()" />
+        </div>
+        <div>
+          <label class="builder-label" for="sender-name">Your Name (?from=)</label>
+          <input type="text" id="sender-name" class="share-input" placeholder="e.g. Rayce" oninput="buildCustomUrl()" />
+        </div>
+      </div>
+
+      <div style="margin-top: 8px;">
+        <label class="builder-label" for="custom-demand">Custom Ransom Demand (?demand=)</label>
+        <input type="text" id="custom-demand" class="share-input" placeholder="e.g. 500 Headpats or $9,999.00" oninput="buildCustomUrl()" />
+      </div>
+
+      <label class="toggle-row" for="skip-toggle">
+        <span>⚡ <strong>Instant Ambush (?skip=1)</strong> — Skip button chase</span>
+        <input type="checkbox" id="skip-toggle" onchange="buildCustomUrl()" />
+      </label>
+
+      <input type="text" id="url-preview" class="url-preview" readonly onclick="this.select()" />
+
+      <button class="bait-btn" style="margin-top: 10px; background: #ff3366;" onclick="shareCustomLink()">
         Copy / Share Prank Link
       </button>
-      <div id="copy-feedback" style="font-size: 12px; color: #00ff88; margin-top: 6px; min-height: 16px;"></div>
+      <div id="copy-feedback" style="font-size: 12px; color: #00ff88; margin-top: 6px; min-height: 16px; text-align: center;"></div>
     </div>
 
-    <button class="bait-btn" style="max-width: 200px; background: #2b2f3e; margin-top: 14px;" onclick="exitPrank()">
+    <button class="bait-btn" style="max-width: 200px; background: #2b2f3e; margin-top: 12px;" onclick="exitPrank()">
       Reset Screen
     </button>
   </div>
@@ -769,6 +891,13 @@
       document.getElementById('bait-desc').textContent =
         'Complete quick viewer verification to unlock the shared photos before the link expires.';
       document.getElementById('bait-cta').textContent = 'Verify & View Album';
+    } else if (params.get('bait') === 'trial') {
+      document.getElementById('bait-icon').textContent = '✨';
+      document.getElementById('bait-title').textContent = '30-Day VIP Pro Free Trial';
+      document.getElementById('bait-desc').textContent =
+        'No credit card required. Tap below to verify your device and activate your 1-month pass.';
+      document.getElementById('bait-cta').textContent = 'Activate Free Trial';
+      document.getElementById('bait-cta').style.background = '#10b981';
     }
 
     if (!isDesktop) {
@@ -818,6 +947,7 @@
     let prankFinished = false;
     let glitchLoopId = null;
     let tabLoopId = null;
+    let chatLoopId = null;
     let ransomIntervalId = null;
     let ghostIntervalId = null;
     let uacTriggered = false;
@@ -832,7 +962,6 @@
       }
     });
 
-    // Click-to-Crack Glass & Dead Pixel Overlay during active prank
     document.addEventListener('pointerdown', (e) => {
       if (!prankActive || prankFinished) return;
       if (document.querySelectorAll('.crack-layer').length >= 14) return;
@@ -857,7 +986,6 @@
       playStaticBurst(0.05);
     });
 
-    // Possessed keyboard typing inside ransomware box
     document.getElementById('possessed-box').addEventListener('keydown', (e) => {
       if (e.key === 'Escape') return;
       e.preventDefault();
@@ -867,7 +995,6 @@
       beep(920, 0.04);
     });
 
-    // Button swap trap on Verify Payment hover
     document.getElementById('pay-btn').addEventListener('mouseenter', () => {
       const row = document.getElementById('ransom-btn-row');
       const pay = document.getElementById('pay-btn');
@@ -882,6 +1009,7 @@
       prankActive = false;
       stopGlitchEngine();
       stopGhostCursor();
+      stopStreamChat();
       clearErrorPopups();
       if (tabLoopId) clearInterval(tabLoopId);
       document.title = 'ARA ARA~! — Project Nightmare';
@@ -891,9 +1019,47 @@
       document.getElementById('usb-toast').classList.remove('show');
       document.getElementById('win98-flash').style.display = 'none';
       document.getElementById('zayin-banner').style.display = 'none';
+      document.getElementById('crt-overlay').style.display = 'none';
       document.body.classList.remove('zayin-freeze');
       document.querySelectorAll('.crack-layer, .taskmgr-box').forEach(el => el.remove());
       if (ransomIntervalId) clearInterval(ransomIntervalId);
+    }
+
+    function startStreamChat() {
+      const chat = document.getElementById('stream-chat');
+      const feed = document.getElementById('stream-chat-feed');
+      chat.style.display = 'flex';
+      feed.innerHTML = '';
+
+      const viewers = [
+        ['#ff4d6d', 'SpiritWatch', 'NO WAY HE ACTUALLY CLICKED IT 💀'],
+        ['#60a5fa', 'xX_Shido_Xx', 'BRO UNPLUG YOUR ROUTER RN'],
+        ['#facc15', 'NightmareBot', 'W KURUMI >:3'],
+        ['#34d399', 'Anon_404', `RIP ${targetName}'s files 😭`],
+        ['#c084fc', 'ZafkielMod', '47 people watching this live lol'],
+        ['#fb7185', 'ClockEye', 'dont look at your webcam led 👀']
+      ];
+
+      let idx = 0;
+      const pushMsg = () => {
+        const [col, user, msg] = viewers[idx % viewers.length];
+        const row = document.createElement('div');
+        row.innerHTML = `<strong style="color:${col}">${user}:</strong> <span style="color:#e5e7eb">${msg}</span>`;
+        feed.appendChild(row);
+        while (feed.children.length > 5) feed.removeChild(feed.firstChild);
+        idx++;
+      };
+
+      pushMsg();
+      chatLoopId = setInterval(pushMsg, 650);
+    }
+
+    function stopStreamChat() {
+      if (chatLoopId) {
+        clearInterval(chatLoopId);
+        chatLoopId = null;
+      }
+      document.getElementById('stream-chat').style.display = 'none';
     }
 
     function startTabFlasher() {
@@ -981,7 +1147,6 @@
       document.getElementById(id).classList.add('active');
     }
 
-    // STAGE 0 -> FAST STAGE 1 (OR ?skip=1 AMBUSH)
     function startPrank() {
       prankActive = true;
       enableBackTrap();
@@ -1002,7 +1167,6 @@
       showScreen('trap-screen');
       attachDodge(document.getElementById('main-btn'));
 
-      // Auto-detonate after 2.5s so nobody gets stuck chasing buttons
       setTimeout(() => {
         if (document.getElementById('trap-screen').classList.contains('active')) {
           startUacTrap();
@@ -1059,7 +1223,6 @@
       attachDodge(clone);
     }
 
-    // STAGE 1.5: FAKE UAC / ROOT AUTO-YES PROMPT
     function startUacTrap() {
       showScreen('uac-screen');
       beep(440, 0.12);
@@ -1098,7 +1261,6 @@
       }, 780);
     }
 
-    // STAGE 2: REALITY COLLAPSE + ZAFKIEL CLOCK + DALET REWIND + USB/DM/DEFENDER TOASTS
     async function populateHardwareSpecs() {
       let gpu = "Integrated Graphics";
       try {
@@ -1114,7 +1276,7 @@
       const hour = now.getHours();
       const timeRoast = (hour >= 0 && hour <= 4)
         ? `Up at ${timeStr}? How unhealthy~`
-        : `Local Time: ${timeStr} (${userTimezone})`;
+        : `Time: ${timeStr} (${userTimezone})`;
 
       document.getElementById('hw-specs').innerHTML =
         `<strong>TARGET:</strong> ${targetName} | <strong>YUD ROAST:</strong> ${timeRoast}<br/>` +
@@ -1141,6 +1303,7 @@
     function startCollapse() {
       if (isDesktop) document.body.style.cursor = 'none';
       document.getElementById('live-share-frame').style.display = 'block';
+      startStreamChat();
       showScreen('collapse-screen');
       populateHardwareSpecs();
 
@@ -1192,7 +1355,6 @@
           beep(520 + p * 6, 0.05);
         }
 
-        // FOURTH BULLET: DALET (Cruel Rewind from 99% -> 45% -> 100%)
         if (p === 99 && !daletRewound) {
           daletRewound = true;
           clearInterval(timer);
@@ -1237,7 +1399,6 @@
       document.querySelectorAll('.err-dialog, .taskmgr-box').forEach(el => el.remove());
     }
 
-    // STAGE 2B: ERROR CASCADE + SPOOFED TASK MANAGER HIJACK
     function spawnFakeTaskManager() {
       const tm = document.createElement('div');
       tm.className = 'taskmgr-box';
@@ -1290,6 +1451,7 @@
         if (count >= total) {
           setTimeout(() => {
             clearErrorPopups();
+            stopStreamChat();
             document.getElementById('live-share-frame').style.display = 'none';
             startBsod();
           }, 300);
@@ -1330,7 +1492,6 @@
       spawnNext();
     }
 
-    // STAGE 3: BSOD + RGB GLITCH + ZAYIN TIME FREEZE + YUD BET 1998 FLASH
     function spawnTearSlices(count = 8) {
       document.querySelectorAll('.tear-bar').forEach(el => el.remove());
       const colors = ['#00f0ff', '#ff003c', '#ffffff', '#000000', '#590016'];
@@ -1408,7 +1569,6 @@
           startGlitchEngine();
         }
 
-        // SEVENTH BULLET: ZAYIN (Dead-silent monochrome time freeze at 58%)
         if (p === 58 && !zayinDone) {
           zayinDone = true;
           clearInterval(bsodTimer);
@@ -1424,7 +1584,6 @@
               p += 2;
               document.getElementById('bsod-pct').textContent = `${p}% complete`;
 
-              // TWELFTH BULLET: YUD BET (Windows 98 time-travel flash at 82%)
               if (p === 82 && !yudBetDone) {
                 yudBetDone = true;
                 document.getElementById('win98-flash').style.display = 'flex';
@@ -1451,7 +1610,6 @@
       }, 68);
     }
 
-    // STAGE 4: AMERICAN MEGATRENDS BIOS POST SCREEN
     function startBiosScreen() {
       showScreen('bios-screen');
       const cores = navigator.hardwareConcurrency || 8;
@@ -1485,7 +1643,6 @@
       setTimeout(startBootScreen, 2400);
     }
 
-    // STAGE 5: FAKE WINDOWS / MOBILE BOOT SCREEN
     function startBootScreen() {
       showScreen('boot-screen');
       const status = document.getElementById('boot-status');
@@ -1512,7 +1669,6 @@
       setTimeout(startFakeRansom, 3100);
     }
 
-    // STAGE 6: RANSOMWARE + GHOST CURSOR + POSSESSED KEYBOARD
     function formatMMSS(sec) {
       const m = String(Math.floor(sec / 60)).padStart(2, '0');
       const s = String(sec % 60).padStart(2, '0');
@@ -1609,7 +1765,6 @@
       }, 750);
     }
 
-    // STAGE 7: FAKE SYSTEM WIPE CASCADE
     function triggerWipeNow(reasonText) {
       if (wipeStarted) return;
       wipeStarted = true;
@@ -1659,15 +1814,95 @@
           idx++;
         } else {
           clearInterval(wipeTimer);
-          setTimeout(showReveal, 950);
+          setTimeout(triggerDoubleCross, 850);
         }
       }, 310);
+    }
+
+    // STAGE 7.5: FAKE REVEAL DOUBLE-CROSS + CRT TV TURN-OFF
+    function triggerDoubleCross() {
+      const dc = document.getElementById('doublecross-screen');
+      const title = document.getElementById('dc-title');
+      const sub = document.getElementById('dc-sub');
+      dc.style.background = '#000';
+      title.style.color = '#10b981';
+      title.textContent = 'Just kidding! It was a prank! 😄';
+      sub.textContent = 'Relax, your files are completely safe—';
+      showScreen('doublecross-screen');
+      beep(660, 0.12, 'sine');
+
+      setTimeout(() => {
+        dc.style.background = '#590016';
+        dc.classList.add('shake');
+        title.style.color = '#ffffff';
+        title.textContent = 'JUST KIDDING ABOUT THE JUST KIDDING >:3';
+        sub.textContent = 'FINALIZING SOUL EXTRACTION — SAY GOODBYE~';
+        playStaticBurst(0.45);
+        beep(140, 0.45, 'sawtooth');
+        buzz([250, 80, 350]);
+
+        setTimeout(() => {
+          dc.classList.remove('shake');
+          playCrtTurnOff(showReveal);
+        }, 1250);
+      }, 1350);
+    }
+
+    function playCrtTurnOff(onDone) {
+      const overlay = document.getElementById('crt-overlay');
+      const beam = document.getElementById('crt-beam');
+      overlay.style.display = 'flex';
+      beam.classList.remove('crt-animate');
+      void beam.offsetWidth;
+      beam.classList.add('crt-animate');
+      beep(2400, 0.18, 'sine');
+
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        onDone();
+      }, 580);
+    }
+
+    // STAGE 8: TRUE REVEAL & LIVE LINK BUILDER
+    function initLinkBuilder() {
+      const currentBait = params.get('bait');
+      if (currentBait === 'album') document.getElementById('bait-page').value = 'album.html';
+      else if (currentBait === 'gift') document.getElementById('bait-page').value = 'gift.html';
+      else if (currentBait === 'trial') document.getElementById('bait-page').value = 'trial.html';
+
+      if (params.get('to')) document.getElementById('friend-name').value = params.get('to');
+      if (params.get('from')) document.getElementById('sender-name').value = params.get('from');
+      if (params.get('demand')) document.getElementById('custom-demand').value = params.get('demand');
+      if (params.get('skip') === '1') document.getElementById('skip-toggle').checked = true;
+
+      buildCustomUrl();
+    }
+
+    function buildCustomUrl() {
+      const page = document.getElementById('bait-page').value;
+      const friend = document.getElementById('friend-name').value.trim();
+      const sender = document.getElementById('sender-name').value.trim();
+      const demand = document.getElementById('custom-demand').value.trim();
+      const skip = document.getElementById('skip-toggle').checked;
+
+      const baseDir = new URL('./', window.location.href);
+      const url = new URL(page, baseDir);
+
+      if (friend) url.searchParams.set('to', friend);
+      if (sender) url.searchParams.set('from', sender);
+      if (demand) url.searchParams.set('demand', demand);
+      if (skip) url.searchParams.set('skip', '1');
+
+      const finalUrl = url.toString();
+      document.getElementById('url-preview').value = finalUrl;
+      return finalUrl;
     }
 
     function showReveal() {
       prankFinished = true;
       cleanupAllEffects();
       document.body.style.cursor = 'auto';
+      initLinkBuilder();
       showScreen('end-screen');
       setTimeout(() => {
         document.getElementById('end-screen').style.opacity = '1';
@@ -1675,22 +1910,26 @@
     }
 
     async function shareCustomLink() {
-      const friend = document.getElementById('friend-name').value.trim();
-      const url = new URL(window.location.href.split('?')[0]);
-      if (friend) url.searchParams.set('to', friend);
-      const finalUrl = url.toString();
+      const finalUrl = buildCustomUrl();
+      const page = document.getElementById('bait-page').value;
+      const shareTitle = page === 'album.html'
+        ? 'Shared Photo Album (18 items)'
+        : page === 'trial.html'
+        ? '30-Day VIP Pro Free Trial Pass'
+        : 'You received a Mystery Gift!';
 
       try {
         await navigator.clipboard.writeText(finalUrl);
-        document.getElementById('copy-feedback').textContent = `Copied: ${finalUrl}`;
+        document.getElementById('copy-feedback').textContent = 'Copied link to clipboard!';
       } catch (e) {
-        document.getElementById('copy-feedback').textContent = finalUrl;
+        document.getElementById('url-preview').select();
+        document.getElementById('copy-feedback').textContent = 'Link selected — tap Copy above!';
       }
 
       if (navigator.share) {
         navigator.share({
-          title: 'You received a Mystery Gift!',
-          text: 'Claim your gift link before it expires:',
+          title: shareTitle,
+          text: 'Open before the link expires:',
           url: finalUrl
         }).catch(() => {});
       }

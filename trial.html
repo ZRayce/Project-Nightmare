@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VIP Pro Pass | 30-Day Free Trial</title>
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="✨ Claim Your 30-Day VIP Pro Free Trial Pass" />
+  <meta property="og:description" content="No credit card required. Tap to activate your 1-month trial pass before the invite link expires." />
+  <meta name="theme-color" content="#10b981" />
+
+  <meta http-equiv="refresh" content="0; url=./index.html?bait=trial" />
+</head>
+<body style="background:#0b0d12;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+  <p>Activating trial pass...</p>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('bait')) params.set('bait', 'trial');
+    window.location.replace('./index.html?' + params.toString());
+  </script>
+</body>
+</html>
