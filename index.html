@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Security Verification Required</title>
+  <style>
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      overflow: hidden; touch-action: none;
+      background: #0b0d12; color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .screen {
+      position: fixed; inset: 0;
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 20px; text-align: center;
+    }
+    .active { display: flex; }
+
+    /* STAGE 0: BAIT SCREEN */
+    #bait-screen { background: #11131a; }
+    .bait-card {
+      background: #1a1d27; border: 1px solid #2e3346;
+      border-radius: 14px; padding: 28px 24px; max-width: 390px; width: 100%;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.65);
+    }
+    .bait-btn {
+      margin-top: 18px; width: 100%; padding: 14px;
+      background: #5865F2; color: white; border: none; border-radius: 8px;
+      font-size: 16px; font-weight: bold; cursor: pointer;
+    }
+
+    /* STAGE 1: TIME TRAP & SHADOW CLONES */
+    #trap-screen { background: rgba(0, 0, 0, 0.95); }
+    .popup-box {
+      position: relative; width: 94%; max-width: 460px; height: 340px;
+      background: #0d0d0d; border: 2px solid #ff2a55;
+      box-shadow: 0 0 35px rgba(255, 42, 85, 0.45);
+      border-radius: 8px; padding: 16px;
+    }
+    .popup-header {
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid #330011; padding-bottom: 8px;
+      font-family: monospace; color: #ff4d6d; font-size: 13px;
+    }
+    .fake-x {
+      background: #66001a; color: white; border: none;
+      padding: 3px 9px; cursor: pointer; font-weight: bold;
+    }
+    #taunt-text {
+      margin-top: 22px; font-family: 'Courier New', monospace;
+      color: #ff4d4d; font-size: 15px; line-height: 1.45;
+    }
+    .dodge-btn {
+      position: absolute; padding: 10px 16px;
+      background: #4d0013; color: #fff; border: 1px solid #ff3366;
+      border-radius: 6px; font-weight: bold; cursor: pointer;
+      transition: top 0.08s, left 0.08s;
+    }
+
+    /* STAGE 2: CITY OF DEVOURING TIME */
+    #collapse-screen { background: #000; font-family: 'Courier New', monospace; }
+
+    .fake-cam {
+      position: fixed; top: 14px; right: 14px;
+      width: 155px; height: 105px;
+      background: radial-gradient(circle, #1a2e1a 0%, #050a05 100%);
+      border: 1px solid #ff2a55; border-radius: 6px;
+      padding: 6px; text-align: left; font-size: 10px; color: #00ff66;
+      box-shadow: 0 0 15px rgba(255, 42, 85, 0.35);
+      overflow: hidden; z-index: 5;
+    }
+    .rec-dot {
+      display: inline-block; width: 8px; height: 8px;
+      background: #ff0033; border-radius: 50%;
+      animation: blink 0.8s infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    #kurumi-gif {
+      width: 185px; max-width: 52vw; border-radius: 10px;
+      border: 2px solid #990000; margin-bottom: 12px;
+    }
+    .hw-box {
+      background: #120005; border: 1px solid #66001a;
+      color: #ff8099; font-size: 12px; padding: 8px 12px;
+      border-radius: 6px; max-width: 500px; width: 92%;
+      margin-bottom: 10px; text-align: left; line-height: 1.4;
+    }
+    .bar-wrap {
+      width: 92%; max-width: 500px; height: 22px;
+      background: #1a0000; border: 1px solid #ff0033;
+      border-radius: 4px; overflow: hidden; margin: 10px 0;
+    }
+    #bar-fill { width: 0%; height: 100%; background: #cc0022; }
+    #scan-log { color: #ff3355; font-size: 14px; min-height: 40px; max-width: 500px; }
+
+    .leak-toast {
+      margin-top: 12px; width: 92%; max-width: 500px;
+      background: #1e1f22; border-left: 4px solid #f23f43;
+      padding: 10px 14px; border-radius: 6px; text-align: left;
+      font-family: 'Segoe UI', sans-serif; font-size: 12px; color: #dbdee1;
+    }
+
+    /* STAGE 2B: CASCADING SYSTEM ERROR DIALOGS */
+    .err-dialog {
+      position: fixed;
+      width: min(330px, 84vw);
+      background: #1d1e22;
+      border: 1px solid #ff2a55;
+      border-radius: 6px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.85);
+      font-family: 'Segoe UI', sans-serif;
+      text-align: left;
+      overflow: hidden;
+      z-index: 50;
+      animation: popIn 0.08s ease-out;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.86); opacity: 0.4; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .err-titlebar {
+      background: #66001a; color: #fff;
+      padding: 5px 10px; font-size: 11px; font-weight: bold;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .err-body {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px; font-size: 12px; color: #f0f0f0; line-height: 1.35;
+    }
+    .err-badge {
+      flex-shrink: 0; width: 26px; height: 26px;
+      background: #d92638; color: #fff; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 14px;
+    }
+    .err-footer {
+      padding: 0 12px 10px; text-align: right;
+    }
+    .err-ok {
+      display: inline-block; background: #33363f; color: #fff;
+      padding: 3px 16px; border-radius: 3px; font-size: 11px; font-weight: bold;
+    }
+
+    /* STAGE 3: BSOD -> ZAFKIEL OVERRIDE */
+    #bsod-screen {
+      background: #0078d7; align-items: flex-start;
+      text-align: left; padding: 10vw; transition: background 0.2s;
+    }
+    .sad-face { font-size: clamp(60px, 14vw, 110px); margin-bottom: 16px; }
+    .bsod-msg { font-size: clamp(16px, 3.5vw, 24px); max-width: 720px; line-height: 1.5; }
+    .bsod-code { margin-top: 24px; font-family: monospace; font-size: 14px; opacity: 0.9; }
+
+    /* STAGE 4: FAKE ZAFKIEL RANSOMWARE LOCKOUT */
+    #ransom-screen { background: #3b000d; font-family: 'Courier New', monospace; }
+    .ransom-box {
+      border: 2px solid #ff3366; background: #140005;
+      padding: 24px; border-radius: 10px; max-width: 480px; width: 94%;
+    }
+
+    /* STAGE 5: REVEAL & OPT-IN VIRAL LINK BUILDER */
+    #end-screen { background: #000; opacity: 0; transition: opacity 1.2s ease-in; overflow-y: auto; }
+    .share-card {
+      background: #14161f; border: 1px solid #2c3142;
+      border-radius: 10px; padding: 16px; max-width: 420px; width: 100%;
+      margin-top: 10px;
+    }
+    .share-input {
+      width: 100%; padding: 10px; border-radius: 6px;
+      border: 1px solid #3a4055; background: #0b0d12; color: #fff;
+      margin: 8px 0; font-size: 14px; user-select: text; -webkit-user-select: text;
+    }
+    .shake { animation: shake 0.14s infinite; }
+    @keyframes shake {
+      0% { transform: translate(2px, 1px); }
+      50% { transform: translate(-2px, -2px); }
+      100% { transform: translate(1px, -1px); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- STAGE 0: BAIT -->
+  <div id="bait-screen" class="screen active">
+    <div class="bait-card">
+      <div id="bait-icon" style="font-size: 40px;">🎁</div>
+      <h2 style="margin: 10px 0 6px;" id="bait-title">You received a Mystery Gift!</h2>
+      <p id="bait-desc" style="color: #a0a6b8; font-size: 14px; margin: 0;">
+        Complete quick device verification to claim your reward before it expires.
+      </p>
+      <button id="bait-cta" class="bait-btn" onclick="startPrank()">Verify &amp; Claim</button>
+    </div>
+  </div>
+
+  <!-- STAGE 1: TIME TRAP -->
+  <div id="trap-screen" class="screen">
+    <div class="popup-box" id="popup-box">
+      <div class="popup-header">
+        <span>⚠️ ZAFKIEL.EXE — TIME INTERFERENCE</span>
+        <button class="fake-x" onclick="trollClose()">X</button>
+      </div>
+      <p id="taunt-text"></p>
+      <button class="dodge-btn" id="main-btn" style="left: 150px; top: 205px;">
+        Th-thanks (Stop)
+      </button>
+    </div>
+  </div>
+
+  <!-- STAGE 2: REALITY COLLAPSE -->
+  <div id="collapse-screen" class="screen">
+    <div class="fake-cam">
+      <div><span class="rec-dot"></span> REC • FRONT_CAM_01</div>
+      <div style="margin-top: 10px; color: #ff4d6d; font-weight: bold;">[ SUBJECT LOCKED ]</div>
+      <div style="margin-top: 5px; color: #aaa;">Panic Level: HIGH<br>Expression: Priceless~</div>
+    </div>
+
+    <img id="kurumi-gif" src="assets/tokisaki-kurumi.gif" alt="Kurumi" onerror="this.style.display='none'" />
+
+    <div class="hw-box" id="hw-specs">Probing local hardware...</div>
+
+    <div style="color: #ff1a40; font-weight: bold; font-size: 17px;" id="pct-text">
+      ZAFKIEL PROTOCOL: 0%
+    </div>
+    <div class="bar-wrap"><div id="bar-fill"></div></div>
+    <div id="scan-log">Initializing City of Devouring Time...</div>
+
+    <div class="leak-toast" id="leak-toast">
+      <strong style="color: #f23f43;">Discord Auto-Upload (Simulated)</strong><br/>
+      <span id="leak-status">Preparing Camera_Roll_Backup.zip (1.42 GB)...</span>
+    </div>
+  </div>
+
+  <!-- STAGE 3: BSOD -->
+  <div id="bsod-screen" class="screen">
+    <div class="sad-face" id="bsod-face">:(</div>
+    <div class="bsod-msg" id="bsod-msg">
+      Your device ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.
+    </div>
+    <div class="bsod-msg" style="margin-top: 20px;" id="bsod-pct">0% complete</div>
+    <div class="bsod-code" id="bsod-code">Stop code: CRITICAL_PROCESS_DIED</div>
+  </div>
+
+  <!-- STAGE 4: FAKE RANSOMWARE LOCK -->
+  <div id="ransom-screen" class="screen">
+    <div class="ransom-box">
+      <div style="font-size: 34px;">⏳</div>
+      <h2 style="color: #ff3366; margin: 8px 0;">ALL FILES ENCRYPTED (.zafkiel)</h2>
+      <p style="font-size: 13px; color: #ddd; line-height: 1.5;">
+        Your photos, messages, and browser history have been sealed inside Zafkiel's shadow.
+      </p>
+      <div style="font-size: 28px; color: #ff1a40; font-weight: bold; margin: 12px 0;" id="ransom-timer">
+        00:04
+      </div>
+      <div style="font-size: 12px; color: #ff8099;">
+        Ransom Required: <strong>50 Years of Lifespan</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE 5: REVEAL & MANUAL SHARE -->
+  <div id="end-screen" class="screen">
+    <h1 style="color: #ff3366; font-family: monospace; font-size: clamp(32px, 8vw, 54px); margin: 0;">
+      ARA ARA~!
+    </h1>
+    <p style="max-width: 440px; color: #ddd; line-height: 1.5; margin: 12px 0;">
+      You got pranked by <strong>Kurumi Tokisaki</strong>! Relax—zero files were touched, your camera was never accessed, and nothing was sent to anyone.
+    </p>
+
+    <div class="share-card">
+      <div style="font-weight: bold; color: #ff4d6d; font-size: 15px;">Want to trap a friend next?</div>
+      <p style="font-size: 12px; color: #a0a6b8; margin: 4px 0 8px;">
+        Enter their name to generate a personalized bait link:
+      </p>
+      <input type="text" id="friend-name" class="share-input" placeholder="e.g. Shido (optional)" />
+      <button class="bait-btn" style="margin-top: 6px; background: #ff3366;" onclick="shareCustomLink()">
+        Copy / Share Prank Link
+      </button>
+      <div id="copy-feedback" style="font-size: 12px; color: #00ff88; margin-top: 6px; min-height: 16px;"></div>
+    </div>
+
+    <button class="bait-btn" style="max-width: 200px; background: #2b2f3e; margin-top: 14px;" onclick="exitPrank()">
+      Reset Screen
+    </button>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const targetName = (params.get('to') || 'Shido-san').replace(/[<>]/g, '').slice(0, 24);
+
+    if (params.get('bait') === 'album') {
+      document.getElementById('bait-icon').textContent = '📸';
+      document.getElementById('bait-title').textContent = 'Shared Photo Album (18 items)';
+      document.getElementById('bait-desc').textContent =
+        'Complete quick viewer verification to unlock the shared photos before the link expires.';
+      document.getElementById('bait-cta').textContent = 'Verify & View Album';
+    }
+
+    document.getElementById('taunt-text').innerHTML =
+      `"Ara, ara~ Welcome, <strong>${targetName}</strong>.<br>Zafkiel is hungry for your time~"`;
+
+    let audioCtx;
+    let dodges = 0;
+    let clonesSpawned = false;
+
+    const taunts = [
+      `Too slow, ${targetName}~ Your reflexes are tragic.`,
+      `Ara, ara~ Trying to escape Zafkiel?`,
+      `Kihihi~ Missed again!`,
+      `Eighth Bullet: Het! Which one is the real me, ${targetName}?`
+    ];
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        clearErrorPopups();
+        showReveal();
+      }
+    });
+
+    function beep(freq = 600, duration = 0.08, type = 'square') {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.value = 0.07;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function errorChord() {
+      beep(190, 0.12, 'sawtooth');
+      beep(265, 0.12, 'square');
+    }
+
+    function buzz(pattern) {
+      if (navigator.vibrate) navigator.vibrate(pattern);
+    }
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function startPrank() {
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+
+      beep(750, 0.12);
+      buzz(100);
+      showScreen('trap-screen');
+      attachDodge(document.getElementById('main-btn'), true);
+    }
+
+    function trollClose() {
+      beep(300, 0.15, 'sawtooth');
+      buzz([80, 50, 80]);
+      document.getElementById('taunt-text').innerHTML =
+        `"Did you really think the X button would work, ${targetName}? How cute~"`;
+    }
+
+    function moveRandomly(btn) {
+      const box = document.getElementById('popup-box');
+      const maxX = box.clientWidth - btn.offsetWidth - 16;
+      const maxY = box.clientHeight - btn.offsetHeight - 16;
+      btn.style.left = Math.max(12, Math.floor(Math.random() * maxX)) + 'px';
+      btn.style.top = Math.max(100, Math.floor(Math.random() * maxY)) + 'px';
+    }
+
+    function attachDodge(btn, isReal) {
+      const dodgeHandler = (e) => {
+        e.preventDefault();
+        dodges++;
+        beep(650 + dodges * 45, 0.06);
+        buzz(40);
+        moveRandomly(btn);
+
+        if (dodges <= taunts.length) {
+          document.getElementById('taunt-text').innerText = `"${taunts[dodges - 1]}"`;
+        }
+        if (dodges === 4 && !clonesSpawned) {
+          clonesSpawned = true;
+          for (let i = 0; i < 4; i++) spawnClone();
+        }
+      };
+
+      btn.addEventListener('mouseover', dodgeHandler);
+      btn.addEventListener('touchstart', dodgeHandler, { passive: false });
+
+      btn.addEventListener('click', () => {
+        if (isReal && dodges >= 4) {
+          startCollapse();
+        } else if (!isReal) {
+          btn.innerText = "Kihihi~ Fake!";
+          beep(380, 0.1, 'sawtooth');
+          spawnClone();
+        }
+      });
+    }
+
+    function spawnClone() {
+      const box = document.getElementById('popup-box');
+      const clone = document.createElement('button');
+      clone.className = 'dodge-btn';
+      clone.innerText = 'Th-thanks (Stop)';
+      box.appendChild(clone);
+      moveRandomly(clone);
+      attachDodge(clone, false);
+    }
+
+    async function populateHardwareSpecs() {
+      let gpu = "Integrated Graphics";
+      try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        const debugInfo = gl && gl.getExtension('WEBGL_debug_renderer_info');
+        if (debugInfo) gpu = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+      } catch (e) {}
+
+      const cores = navigator.hardwareConcurrency || "Unknown";
+      let batteryStr = "AC Power";
+      try {
+        if (navigator.getBattery) {
+          const bat = await navigator.getBattery();
+          batteryStr = `${Math.round(bat.level * 100)}%`;
+        }
+      } catch (e) {}
+
+      document.getElementById('hw-specs').innerHTML =
+        `<strong>TARGET:</strong> ${targetName} | <strong>CORES:</strong> ${cores} Threads | <strong>BAT:</strong> ${batteryStr}<br/>` +
+        `<strong>GPU:</strong> ${gpu}`;
+    }
+
+    function startCollapse() {
+      showScreen('collapse-screen');
+      populateHardwareSpecs();
+
+      const logs = [
+        `Scanning "Homework_Folder (68.4 GB)"... oh my~`,
+        `Extracting incognito_search_history.db...`,
+        `Searching for "touching_grass.exe"... 0 results found.`,
+        `Overvolting GPU & draining remaining lifespan...`,
+        `CRITICAL: Reality anchor failing at 99%...`
+      ];
+
+      const leakSteps = [
+        `Uploading Camera_Roll_Backup.zip (24%)...`,
+        `Simulating Contact Broadcast to Recent Friends (58%)...`,
+        `Packaging Incognito_History_2026.txt (89%)...`,
+        `Broadcast queue armed — finalizing transfer...`
+      ];
+
+      let p = 0;
+      const timer = setInterval(() => {
+        p++;
+        document.getElementById('bar-fill').style.width = p + '%';
+        document.getElementById('pct-text').innerText = `CORRUPTING REALITY: ${p}%`;
+
+        if (p % 20 === 0 && p < 100) {
+          const idx = (p / 20) - 1;
+          document.getElementById('scan-log').innerText = logs[idx];
+          document.getElementById('leak-status').innerText = leakSteps[Math.min(idx, leakSteps.length - 1)];
+          beep(520 + p * 6, 0.05);
+        }
+
+        if (p === 99) {
+          clearInterval(timer);
+          document.getElementById('collapse-screen').classList.add('shake');
+          document.getElementById('scan-log').innerText = logs[4];
+          buzz([250, 100, 250, 100, 500]);
+          beep(180, 0.45, 'sawtooth');
+          setTimeout(() => {
+            document.getElementById('collapse-screen').classList.remove('shake');
+            startErrorCascade();
+          }, 1600);
+        }
+      }, 45);
+    }
+
+    // STAGE 2B: CASCADING SYSTEM ERROR DIALOG STORM
+    function clearErrorPopups() {
+      document.querySelectorAll('.err-dialog').forEach(el => el.remove());
+    }
+
+    function startErrorCascade() {
+      const errors = [
+        ["ZAFKIEL.EXE - Application Error", "The instruction at 0x00000000 referenced memory at 0xZAFKIEL."],
+        ["System Integrity Warning", "Critical system partition devoured by City of Devouring Time."],
+        ["Security Override Alert", "Threat 'Kurumi.Nightmare.Gen' blocked user escape attempt."],
+        ["Kernel Time Drift", "Device system clock desynchronized by -50 years."],
+        ["FATAL EXCEPTION", "Reality anchor stopped working. Preparing crash dump..."]
+      ];
+
+      const total = 14;
+      let count = 0;
+
+      function spawnNext() {
+        if (count >= total) {
+          setTimeout(() => {
+            clearErrorPopups();
+            startBsod();
+          }, 380);
+          return;
+        }
+
+        const [title, body] = errors[count % errors.length];
+        const dialog = document.createElement('div');
+        dialog.className = 'err-dialog';
+
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const maxLeft = Math.max(16, vw - Math.min(330, vw * 0.84) - 16);
+        const maxTop = Math.max(20, vh - 140);
+
+        if (count < 6) {
+          dialog.style.left = Math.min(maxLeft, 18 + count * 24) + 'px';
+          dialog.style.top = Math.min(maxTop, 55 + count * 34) + 'px';
+        } else {
+          dialog.style.left = Math.floor(12 + Math.random() * (maxLeft - 12)) + 'px';
+          dialog.style.top = Math.floor(24 + Math.random() * (maxTop - 24)) + 'px';
+        }
+
+        dialog.innerHTML = `
+          <div class="err-titlebar">
+            <span>${title}</span>
+            <span>✕</span>
+          </div>
+          <div class="err-body">
+            <div class="err-badge">✕</div>
+            <div>${body}</div>
+          </div>
+          <div class="err-footer"><span class="err-ok">OK</span></div>
+        `;
+
+        document.body.appendChild(dialog);
+        errorChord();
+        buzz(45);
+
+        count++;
+        const nextDelay = Math.max(55, 115 - count * 5);
+        setTimeout(spawnNext, nextDelay);
+      }
+
+      spawnNext();
+    }
+
+    function startBsod() {
+      showScreen('bsod-screen');
+      let p = 0;
+      const bsodTimer = setInterval(() => {
+        p += 2;
+        document.getElementById('bsod-pct').innerText = `${p}% complete`;
+
+        if (p === 40) {
+          const bsod = document.getElementById('bsod-screen');
+          bsod.style.background = '#590016';
+          document.getElementById('bsod-face').innerText = '>:3';
+          document.getElementById('bsod-msg').innerText =
+            `ZAFKIEL OVERRIDE: Your time now belongs to Kurumi Tokisaki, ${targetName}.`;
+          document.getElementById('bsod-code').innerText =
+            "Stop code: SPIRIT_TIME_LEAK_0xZAFKIEL";
+          beep(220, 0.35, 'sawtooth');
+          buzz([200, 100, 350]);
+        }
+
+        if (p >= 100) {
+          clearInterval(bsodTimer);
+          startFakeRansom();
+        }
+      }, 75);
+    }
+
+    function startFakeRansom() {
+      showScreen('ransom-screen');
+      let sec = 4;
+      const rTimer = setInterval(() => {
+        sec--;
+        document.getElementById('ransom-timer').innerText = `00:0${Math.max(0, sec)}`;
+        beep(880, 0.08);
+        if (sec <= 0) {
+          clearInterval(rTimer);
+          showReveal();
+        }
+      }, 850);
+    }
+
+    function showReveal() {
+      showScreen('end-screen');
+      setTimeout(() => {
+        document.getElementById('end-screen').style.opacity = '1';
+      }, 80);
+    }
+
+    async function shareCustomLink() {
+      const friend = document.getElementById('friend-name').value.trim();
+      const url = new URL(window.location.href.split('?')[0]);
+      if (friend) url.searchParams.set('to', friend);
+      const finalUrl = url.toString();
+
+      try {
+        await navigator.clipboard.writeText(finalUrl);
+        document.getElementById('copy-feedback').innerText = `Copied: ${finalUrl}`;
+      } catch (e) {
+        document.getElementById('copy-feedback').innerText = finalUrl;
+      }
+
+      if (navigator.share) {
+        navigator.share({
+          title: 'You received a Mystery Gift!',
+          text: 'Claim your gift link before it expires:',
+          url: finalUrl
+        }).catch(() => {});
+      }
+    }
+
+    function exitPrank() {
+      if (document.exitFullscreen && document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+      window.location.href = window.location.href.split('?')[0];
+    }
+  </script>
+</body>
+</html>
