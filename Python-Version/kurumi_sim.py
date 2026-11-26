@@ -15,7 +15,7 @@ from PIL import Image, ImageGrab, ImageSequence, ImageTk
 
 
 def resource_path(relative_path: str) -> str:
-    """Resolves asset paths for both normal script runs and PyInstaller --onefile builds."""
+    """Resolves asset paths for both normal script runs and PyInstaller builds."""
     if hasattr(sys, "_MEIPASS"):
         return os.path.join(sys._MEIPASS, relative_path)
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -26,96 +26,167 @@ def resource_path(relative_path: str) -> str:
 
 
 class ZafkielAudio:
-    """Synthesizes zero-dependency WAV sound effects in RAM for winsound."""
+    """Synthesizes 16-bit stereo WAV sound effects in RAM for winsound."""
 
     def __init__(self, sample_rate: int = 22050):
         self.sr = sample_rate
         self.sounds = {
-            "tick": self._build_tick(freq=1350, decay=45, duration=0.055),
-            "tock": self._build_tick(freq=980, decay=45, duration=0.055),
+            "tick_l": self._build_tick(freq=1380, decay=42, duration=0.06, pan=-0.8),
+            "tock_r": self._build_tick(freq=960, decay=42, duration=0.06, pan=0.8),
             "clone": self._build_chime(),
             "error": self._build_error_chord(),
             "usb": self._build_usb_disconnect(),
-            "glitch": self._build_glitch(duration=0.22),
-            "alarm": self._build_alarm(duration=0.45),
+            "shutter": self._build_shutter(),
+            "heartbeat": self._build_heartbeat(),
+            "modem": self._build_modem_screech(),
+            "shepard": self._build_shepard_riser(),
+            "glitch": self._build_glitch(duration=0.26),
+            "alarm": self._build_alarm(duration=0.50),
         }
 
-    def _pack_wav(self, samples: list[int]) -> bytes:
+    def _pack_stereo_wav(self, left_samples: list[int], right_samples: list[int]) -> bytes:
         buf = io.BytesIO()
+        interleaved = []
+        for l_val, r_val in zip(left_samples, right_samples):
+            interleaved.append(max(-32767, min(32767, l_val)))
+            interleaved.append(max(-32767, min(32767, r_val)))
         with wave.open(buf, "wb") as wf:
-            wf.setnchannels(1)
+            wf.setnchannels(2)
             wf.setsampwidth(2)
             wf.setframerate(self.sr)
-            wf.writeframes(struct.pack(f"<{len(samples)}h", *samples))
+            wf.writeframes(struct.pack(f"<{len(interleaved)}h", *interleaved))
         return buf.getvalue()
 
-    def _build_tick(self, freq: float, decay: float, duration: float) -> bytes:
+    def _build_tick(self, freq: float, decay: float, duration: float, pan: float = 0.0) -> bytes:
         total = int(self.sr * duration)
-        samples = []
+        l_gain = math.sqrt(0.5 * (1.0 - pan))
+        r_gain = math.sqrt(0.5 * (1.0 + pan))
+        left, right = [], []
         for i in range(total):
             t = i / self.sr
             env = math.exp(-decay * t)
-            val = math.sin(2 * math.pi * freq * t) * env * 18000
-            samples.append(int(max(-32767, min(32767, val))))
-        return self._pack_wav(samples)
+            click = math.sin(2 * math.pi * freq * t) + 0.4 * math.sin(2 * math.pi * (freq * 2.1) * t)
+            val = click * env * 15000
+            left.append(int(val * l_gain))
+            right.append(int(val * r_gain))
+        return self._pack_stereo_wav(left, right)
 
     def _build_chime(self) -> bytes:
-        total = int(self.sr * 0.13)
-        samples = []
+        total = int(self.sr * 0.16)
+        left, right = [], []
         for i in range(total):
             t = i / self.sr
-            freq = 740 + (950 * t * 6)
-            env = math.exp(-18 * t)
-            val = math.sin(2 * math.pi * freq * t) * env * 16000
-            samples.append(int(max(-32767, min(32767, val))))
-        return self._pack_wav(samples)
+            freq = 720 + (1100 * t * 5.5)
+            env = math.exp(-16 * t)
+            val = int(math.sin(2 * math.pi * freq * t) * env * 16500)
+            left.append(val)
+            right.append(val)
+        return self._pack_stereo_wav(left, right)
 
     def _build_usb_disconnect(self) -> bytes:
-        total = int(self.sr * 0.22)
+        total = int(self.sr * 0.24)
         half = total // 2
-        samples = []
+        left, right = [], []
         for i in range(total):
             freq = 587.33 if i < half else 440.0
             local_t = (i % half) / self.sr
-            env = math.exp(-14 * local_t)
-            val = math.sin(2 * math.pi * freq * local_t) * env * 17000
-            samples.append(int(max(-32767, min(32767, val))))
-        return self._pack_wav(samples)
+            env = math.exp(-13 * local_t)
+            val = int(math.sin(2 * math.pi * freq * local_t) * env * 17500)
+            left.append(val)
+            right.append(val)
+        return self._pack_stereo_wav(left, right)
 
-    def _build_error_chord(self) -> bytes:
-        total = int(self.sr * 0.14)
-        samples = []
+    def _build_shutter(self) -> bytes:
+        total = int(self.sr * 0.11)
+        left, right = [], []
         for i in range(total):
             t = i / self.sr
-            env = math.exp(-14 * t)
-            s1 = math.sin(2 * math.pi * 190 * t)
-            s2 = 1.0 if math.sin(2 * math.pi * 265 * t) >= 0 else -1.0
-            val = ((s1 * 0.6) + (s2 * 0.4)) * env * 17500
-            samples.append(int(max(-32767, min(32767, val))))
-        return self._pack_wav(samples)
+            burst = 1.0 if (t < 0.03 or 0.055 < t < 0.085) else 0.0
+            noise = random.randint(-19000, 19000) * burst
+            left.append(int(noise))
+            right.append(int(noise))
+        return self._pack_stereo_wav(left, right)
+
+    def _build_heartbeat(self) -> bytes:
+        total = int(self.sr * 0.34)
+        left, right = [], []
+        for i in range(total):
+            t = i / self.sr
+            lub = math.exp(-26 * t) * math.sin(2 * math.pi * 58 * t)
+            dub = math.exp(-28 * max(0.0, t - 0.14)) * math.sin(2 * math.pi * 48 * max(0.0, t - 0.14)) if t >= 0.14 else 0.0
+            val = int((lub * 22000) + (dub * 18000))
+            left.append(val)
+            right.append(val)
+        return self._pack_stereo_wav(left, right)
+
+    def _build_modem_screech(self) -> bytes:
+        total = int(self.sr * 0.55)
+        left, right = [], []
+        for i in range(total):
+            t = i / self.sr
+            carrier = math.sin(2 * math.pi * (1400 + 600 * math.sin(2 * math.pi * 24 * t)) * t)
+            grit = random.uniform(-0.35, 0.35)
+            val = int((carrier * 0.65 + grit) * 15000)
+            left.append(val)
+            right.append(val)
+        return self._pack_stereo_wav(left, right)
+
+    def _build_shepard_riser(self) -> bytes:
+        total = int(self.sr * 0.85)
+        left, right = [], []
+        for i in range(total):
+            t = i / self.sr
+            progress = t / 0.85
+            f1 = 160 * (2 ** progress)
+            f2 = 320 * (2 ** progress)
+            f3 = 640 * (2 ** progress)
+            w1 = math.sin(2 * math.pi * f1 * t) * math.sin(math.pi * progress)
+            w2 = math.sin(2 * math.pi * f2 * t) * 0.7
+            w3 = math.sin(2 * math.pi * f3 * t) * (1.0 - progress)
+            val = int((w1 + w2 + w3) * 7500)
+            left.append(val)
+            right.append(val)
+        return self._pack_stereo_wav(left, right)
+
+    def _build_error_chord(self) -> bytes:
+        total = int(self.sr * 0.16)
+        left, right = [], []
+        for i in range(total):
+            t = i / self.sr
+            env = math.exp(-12 * t)
+            s1 = math.sin(2 * math.pi * 185 * t)
+            s2 = 1.0 if math.sin(2 * math.pi * 262 * t) >= 0 else -1.0
+            val = int(((s1 * 0.6) + (s2 * 0.4)) * env * 18000)
+            left.append(val)
+            right.append(val)
+        return self._pack_stereo_wav(left, right)
 
     def _build_glitch(self, duration: float) -> bytes:
         total = int(self.sr * duration)
-        samples = []
-        hold = 0
+        left, right = [], []
+        hold_l, hold_r = 0, 0
         for i in range(total):
-            if i % 18 == 0:
-                hold = random.randint(-19000, 19000)
+            if i % 16 == 0:
+                hold_l = random.randint(-20000, 20000)
+                hold_r = random.randint(-20000, 20000)
             t = i / self.sr
-            mod = 1.0 if int(t * 60) % 2 == 0 else 0.3
-            samples.append(int(hold * mod))
-        return self._pack_wav(samples)
+            mod = 1.0 if int(t * 65) % 2 == 0 else 0.25
+            left.append(int(hold_l * mod))
+            right.append(int(hold_r * mod))
+        return self._pack_stereo_wav(left, right)
 
     def _build_alarm(self, duration: float) -> bytes:
         total = int(self.sr * duration)
-        samples = []
+        left, right = [], []
         for i in range(total):
             t = i / self.sr
-            freq = 145 - (55 * t)
+            freq = 148 - (58 * t)
             wave_val = 1.0 if math.sin(2 * math.pi * freq * t) >= 0 else -1.0
-            env = math.exp(-3.5 * t)
-            samples.append(int(wave_val * env * 20000))
-        return self._pack_wav(samples)
+            env = math.exp(-3.2 * t)
+            val = int(wave_val * env * 20500)
+            left.append(val)
+            right.append(val)
+        return self._pack_stereo_wav(left, right)
 
     def play(self, name: str):
         data = self.sounds.get(name)
@@ -155,6 +226,7 @@ class KurumiFinalNightmare:
 
         self.gif_path = resource_path(os.path.join("assets", "tokisaki-kurumi.gif"))
 
+        # Instant emergency exit at any point
         self.root.bind_all("<Escape>", lambda e: self.cleanup_and_exit())
 
         self.load_gif_frames()
@@ -196,7 +268,7 @@ class KurumiFinalNightmare:
     # =========================================================
     def spawn_stage_one(self):
         self.win = tk.Toplevel(self.root)
-        self.win.title("Definitely No Suspicious Spirit")
+        self.win.title("System Verification Utility")
         self.win.geometry("490x310")
 
         sw, sh = self.win.winfo_screenwidth(), self.win.winfo_screenheight()
@@ -218,18 +290,21 @@ class KurumiFinalNightmare:
 
         self.btn_stop = tk.Button(
             self.win,
-            text="   Th-thanks   ",
+            text="   Verify & Continue   ",
             bg="#3d0011",
             fg="white",
             activebackground="#66001a",
             activeforeground="white",
             font=("Segoe UI", 10, "bold"),
+            relief="flat",
+            padx=12,
+            pady=6,
             command=self.start_uac_trap,
         )
-        self.btn_stop.place(x=190, y=155)
+        self.btn_stop.place(x=165, y=160)
         self.btn_stop.bind("<Enter>", self.handle_hover)
 
-        self.root.after(2500, lambda: self.start_uac_trap() if self.win.winfo_exists() else None)
+        self.root.after(2600, lambda: self.start_uac_trap() if self.win.winfo_exists() else None)
 
     def troll_close_button(self):
         self.audio.play("alarm")
@@ -239,8 +314,8 @@ class KurumiFinalNightmare:
 
     def handle_hover(self, event):
         self.hover_count += 1
-        self.audio.play("tick" if self.hover_count % 2 == 0 else "tock")
-        event.widget.place(x=random.randint(25, 355), y=random.randint(105, 250))
+        self.audio.play("tick_l" if self.hover_count % 2 == 0 else "tock_r")
+        event.widget.place(x=random.randint(25, 340), y=random.randint(105, 250))
 
         if self.hover_count == 1:
             self.taunt_label.config(text=f"\"Too slow, {self.victim_user}~\"")
@@ -256,13 +331,16 @@ class KurumiFinalNightmare:
     def spawn_clone_button(self):
         clone = tk.Button(
             self.win,
-            text="   Th-thanks   ",
+            text="   Verify & Continue   ",
             bg="#3d0011",
             fg="white",
             font=("Segoe UI", 10, "bold"),
+            relief="flat",
+            padx=10,
+            pady=5,
             command=self.start_uac_trap,
         )
-        clone.place(x=random.randint(25, 355), y=random.randint(105, 250))
+        clone.place(x=random.randint(25, 340), y=random.randint(105, 250))
         clone.bind("<Enter>", self.handle_hover)
 
     # =========================================================
@@ -345,12 +423,12 @@ class KurumiFinalNightmare:
                 modal.place(x=mx - 10, y=my + 4)
                 self.root.after(70, lambda: modal.place(x=mx + 10, y=my - 4))
                 self.root.after(140, lambda: modal.place(x=mx, y=my))
-                self.root.after(240, lambda: yes_btn.config(bg="#0078d7"))
+                self.root.after(260, lambda: yes_btn.config(bg="#0078d7"))
             else:
                 yes_btn.config(bg="#0078d7")
                 status_lbl.config(text="Elevating privileges to NT AUTHORITY\\SYSTEM...")
 
-            self.root.after(760, self.start_desktop_melt)
+            self.root.after(950, self.start_desktop_melt)
 
         yes_btn = tk.Button(
             btn_row, text="Yes", bg="#333333", fg="white",
@@ -366,8 +444,8 @@ class KurumiFinalNightmare:
         )
         no_btn.pack(side="left", fill="x", expand=True, padx=(6, 0))
 
-        self.audio.play("tick")
-        self.root.after(2400, lambda: override_uac(False))
+        self.audio.play("tick_l")
+        self.root.after(2800, lambda: override_uac(False))
 
     # =========================================================
     # STAGE 2A: 90s MELT.EXE DRIPPING DESKTOP ILLUSION
@@ -394,7 +472,7 @@ class KurumiFinalNightmare:
             self.start_collapse_ui()
             return
 
-        self.audio.play("glitch")
+        self.audio.play("shepard")
         shot = self.desktop_shot.resize((self.vw, self.vh), Image.Resampling.NEAREST)
 
         self.canvas = tk.Canvas(
@@ -402,7 +480,7 @@ class KurumiFinalNightmare:
         )
         self.canvas.pack(fill="both", expand=True)
 
-        cols = 52
+        cols = 56
         col_w = max(1, self.vw // cols)
         strips = []
         self.strip_refs.clear()
@@ -415,14 +493,13 @@ class KurumiFinalNightmare:
             self.strip_refs.append(tk_strip)
 
             item_id = self.canvas.create_image(x1, 0, anchor="nw", image=tk_strip)
-            # Wave-shaped drip speeds across the screen like classic Melt.exe
-            wave_boost = abs(math.sin(c * 0.25)) * 18
+            wave_boost = abs(math.sin(c * 0.24)) * 16
             strips.append(
                 {
                     "id": item_id,
                     "y": 0.0,
-                    "dy": random.uniform(8.0, 22.0) + wave_boost,
-                    "accel": random.uniform(1.4, 2.8),
+                    "dy": random.uniform(6.0, 18.0) + wave_boost,
+                    "accel": random.uniform(1.2, 2.4),
                 }
             )
 
@@ -436,11 +513,11 @@ class KurumiFinalNightmare:
                 s["y"] += s["dy"]
                 self.canvas.move(s["id"], 0, s["dy"])
 
-            if step in (8, 18):
+            if step in (12, 24):
                 self.audio.play("glitch")
 
-            if active and step < 36:
-                self.root.after(24, lambda: animate_melt(step + 1))
+            if active and step < 44:
+                self.root.after(26, lambda: animate_melt(step + 1))
             else:
                 self.canvas.destroy()
                 self.strip_refs.clear()
@@ -455,7 +532,7 @@ class KurumiFinalNightmare:
     def start_collapse_ui(self):
         primary_w = self.fs.winfo_screenwidth()
         primary_h = self.fs.winfo_screenheight()
-        panel_w, panel_h = 640, 470
+        panel_w, panel_h = 640, 480
         self.base_x = -self.vx + (primary_w - panel_w) // 2
         self.base_y = -self.vy + (primary_h - panel_h) // 2
 
@@ -504,20 +581,29 @@ class KurumiFinalNightmare:
 
         draw_zafkiel_clock(0)
 
+        # Creeping shadow vignette + glowing red LIVE broadcast borders
         self.live_borders = [
-            tk.Frame(self.fs, bg="#ff1a40", height=4, width=primary_w),
-            tk.Frame(self.fs, bg="#ff1a40", height=4, width=primary_w),
-            tk.Frame(self.fs, bg="#ff1a40", height=primary_h, width=4),
-            tk.Frame(self.fs, bg="#ff1a40", height=primary_h, width=4),
+            tk.Frame(self.fs, bg="#2b0008", height=12, width=primary_w),
+            tk.Frame(self.fs, bg="#2b0008", height=12, width=primary_w),
+            tk.Frame(self.fs, bg="#2b0008", height=primary_h, width=12),
+            tk.Frame(self.fs, bg="#2b0008", height=primary_h, width=12),
+            tk.Frame(self.fs, bg="#ff1a40", height=3, width=primary_w),
+            tk.Frame(self.fs, bg="#ff1a40", height=3, width=primary_w),
+            tk.Frame(self.fs, bg="#ff1a40", height=primary_h, width=3),
+            tk.Frame(self.fs, bg="#ff1a40", height=primary_h, width=3),
         ]
         self.live_borders[0].place(x=px0, y=py0)
-        self.live_borders[1].place(x=px0, y=py0 + primary_h - 4)
+        self.live_borders[1].place(x=px0, y=py0 + primary_h - 12)
         self.live_borders[2].place(x=px0, y=py0)
-        self.live_borders[3].place(x=px0 + primary_w - 4, y=py0)
+        self.live_borders[3].place(x=px0 + primary_w - 12, y=py0)
+        self.live_borders[4].place(x=px0, y=py0)
+        self.live_borders[5].place(x=px0, y=py0 + primary_h - 3)
+        self.live_borders[6].place(x=px0, y=py0)
+        self.live_borders[7].place(x=px0 + primary_w - 3, y=py0)
 
         self.live_pill = tk.Label(
             self.fs,
-            text="  ● LIVE — Sharing Screen to Public Channel (47 viewers)  ",
+            text="  ● LIVE  |  Sharing Screen to Public Channel (47 viewers)  ",
             fg="white",
             bg="#1a0006",
             highlightbackground="#ff2a55",
@@ -525,9 +611,16 @@ class KurumiFinalNightmare:
             font=("Segoe UI", 9, "bold"),
             pady=4,
         )
-        self.live_pill.place(x=px0 + (primary_w - 360) // 2, y=py0 + 10, width=360)
+        self.live_pill.place(x=px0 + (primary_w - 380) // 2, y=py0 + 16, width=380)
 
-        # Live Stream Chat Box docked bottom-left
+        # Fake Front Cam Box top-right
+        cam_box = tk.Frame(self.fs, bg="#081208", highlightbackground="#ff2a55", highlightthickness=1)
+        cam_box.place(x=px0 + primary_w - 185, y=py0 + 54, width=165, height=96)
+        tk.Label(cam_box, text=" ● REC  FRONT_CAM_01", fg="#00ff66", bg="#081208", font=("Consolas", 8, "bold"), anchor="w").pack(fill="x", pady=(4, 2))
+        self.cam_status = tk.Label(cam_box, text="[ SUBJECT LOCKED ]", fg="#ff4d6d", bg="#081208", font=("Consolas", 8, "bold"), anchor="w")
+        self.cam_status.pack(fill="x", padx=6)
+        tk.Label(cam_box, text="Panic Level: CRITICAL\nHeart Rate: Elevated", fg="#aaaaaa", bg="#081208", font=("Consolas", 8), justify="left", anchor="w").pack(fill="x", padx=6, pady=4)
+
         self.spawn_stream_chat(px0, py0, primary_h)
 
         self.center_frame = tk.Frame(self.fs, bg="black")
@@ -597,7 +690,7 @@ class KurumiFinalNightmare:
 
         self.toast_label = tk.Label(
             self.center_frame,
-            text="[Discord Auto-Broadcast] Queuing Camera_Roll_Backup.zip...",
+            text="[Cloud Sync] Queuing Camera_Roll_Backup.zip (1.42 GB)...",
             fg="#ff4d6d",
             bg="#141519",
             font=("Consolas", 9),
@@ -607,15 +700,15 @@ class KurumiFinalNightmare:
         self.toast_label.pack(pady=10)
 
         self.spawn_defender_toast(px0, py0, primary_w, primary_h)
-        self.root.after(1100, lambda: self.flash_camera_shutter(px0, py0, primary_w, primary_h))
-        self.root.after(1750, lambda: self.spawn_usb_toast(px0, py0, "Keyboard & Mouse input disconnected"))
-        self.root.after(2400, lambda: self.spawn_dm_toast(px0, py0, primary_w, primary_h))
+        self.root.after(1400, lambda: self.flash_camera_shutter(px0, py0, primary_w, primary_h))
+        self.root.after(2300, lambda: self.spawn_usb_toast(px0, py0, "Keyboard & Mouse input disconnected"))
+        self.root.after(3200, lambda: self.spawn_dm_toast(px0, py0, primary_w, primary_h))
 
         self.run_fake_deletion(px0, py0)
 
     def spawn_stream_chat(self, px0, py0, primary_h):
         chat_box = tk.Frame(self.fs, bg="#0e0f14", highlightbackground="#3d0013", highlightthickness=1)
-        chat_box.place(x=px0 + 18, y=py0 + primary_h - 235, width=265, height=205)
+        chat_box.place(x=px0 + 22, y=py0 + primary_h - 235, width=265, height=205)
 
         head = tk.Frame(chat_box, bg="#2b000b", height=24)
         head.pack(fill="x")
@@ -626,12 +719,12 @@ class KurumiFinalNightmare:
         feed.pack(fill="both", expand=True, padx=8, pady=6)
 
         messages = [
-            ("SpiritWatch", "#ff4d6d", "NO WAY HE OPENED IT 💀"),
-            ("xX_Shido_Xx", "#60a5fa", "BRO UNPLUG YOUR PC RN"),
+            ("SpiritWatch", "#ff4d6d", "NO WAY HE OPENED IT"),
+            ("xX_Shido_Xx", "#60a5fa", "BRO UNPLUG YOUR ROUTER RN"),
             ("NightmareBot", "#facc15", "W KURUMI >:3"),
-            ("Anon_404", "#34d399", f"RIP {self.victim_user}'s C:\\ drive 😭"),
+            ("Anon_404", "#34d399", f"RIP {self.victim_user}'s C:\\ drive"),
             ("ZafkielMod", "#c084fc", "47 people watching this live"),
-            ("ClockEye", "#fb7185", "dont look at your webcam led 👀"),
+            ("ClockEye", "#fb7185", "notice your webcam led? dont look up"),
         ]
 
         idx = [0]
@@ -649,7 +742,7 @@ class KurumiFinalNightmare:
             if len(children) > 6:
                 children[0].destroy()
             idx[0] += 1
-            self.root.after(620, add_chat_line)
+            self.root.after(750, add_chat_line)
 
         add_chat_line()
 
@@ -658,7 +751,9 @@ class KurumiFinalNightmare:
             return
         flash = tk.Frame(self.fs, bg="white")
         flash.place(x=px0, y=py0, width=primary_w, height=primary_h)
-        self.audio.play("glitch")
+        self.audio.play("shutter")
+        if hasattr(self, "cam_status") and self.cam_status.winfo_exists():
+            self.cam_status.config(text="[ REACTION SAVED! ]", fg="#00ff66")
         self.root.after(120, flash.destroy)
 
     def spawn_usb_toast(self, px0, py0, msg: str):
@@ -666,7 +761,7 @@ class KurumiFinalNightmare:
             return
         self.audio.play("usb")
         box = tk.Frame(self.fs, bg="#1b1d23", highlightbackground="#ff9900", highlightthickness=1)
-        box.place(x=px0 + 18, y=py0 + 52, width=300, height=54)
+        box.place(x=px0 + 22, y=py0 + 56, width=305, height=54)
         tk.Label(
             box,
             text=f"🔌 USB Device Unplugged\n{msg}",
@@ -677,17 +772,17 @@ class KurumiFinalNightmare:
             anchor="w",
             padx=10,
         ).pack(fill="both", expand=True)
-        self.root.after(1450, box.destroy)
+        self.root.after(1700, box.destroy)
 
     def spawn_dm_toast(self, px0, py0, primary_w, primary_h):
         if not self.fs.winfo_exists():
             return
         self.audio.play("clone")
         dm = tk.Frame(self.fs, bg="#2b2d31", highlightbackground="#5865F2", highlightthickness=1)
-        dm.place(x=px0 + primary_w - 370, y=py0 + primary_h - 215, width=350, height=62)
+        dm.place(x=px0 + primary_w - 375, y=py0 + primary_h - 220, width=350, height=62)
         tk.Label(
             dm,
-            text=f"💬 Group Chat • Discord\nbro {self.victim_user} why did you just send that?? 😭💀",
+            text=f"💬 Group Chat  |  Now\nbro {self.victim_user} why did you just send that photo??",
             fg="#f2f3f5",
             bg="#2b2d31",
             font=("Segoe UI", 9, "bold"),
@@ -698,9 +793,9 @@ class KurumiFinalNightmare:
 
     def spawn_defender_toast(self, px0, py0, primary_w, primary_h):
         tw, th = 350, 96
-        target_x = px0 + primary_w - tw - 20
+        target_x = px0 + primary_w - tw - 24
         start_x = px0 + primary_w + 10
-        ty = py0 + primary_h - th - 45
+        ty = py0 + primary_h - th - 48
 
         self.def_toast = tk.Frame(
             self.fs, bg="#1e1e1e", highlightbackground="#e81123", highlightthickness=1
@@ -714,7 +809,7 @@ class KurumiFinalNightmare:
         inner.pack(side="left", fill="both", expand=True, padx=10, pady=8)
 
         tk.Label(
-            inner, text="🛡️ Windows Security  •  Just now",
+            inner, text="🛡️ Windows Security  |  Just now",
             fg="white", bg="#1e1e1e", font=("Segoe UI", 9, "bold"), anchor="w"
         ).pack(fill="x")
         tk.Label(
@@ -731,13 +826,13 @@ class KurumiFinalNightmare:
             if not self.def_toast.winfo_exists():
                 return
             if curr_x > target_x:
-                nxt = max(target_x, curr_x - 28)
+                nxt = max(target_x, curr_x - 26)
                 self.def_toast.place(x=nxt, y=ty)
                 self.root.after(18, lambda: slide_in(nxt))
             else:
                 self.audio.play("error")
 
-        self.root.after(450, lambda: slide_in(start_x))
+        self.root.after(550, lambda: slide_in(start_x))
 
     def animate_gif(self, label, counter):
         if not self.frames or not label.winfo_exists():
@@ -756,10 +851,10 @@ class KurumiFinalNightmare:
             "CRITICAL: Reality anchor failing at 99%...",
         ]
         toast_logs = [
-            "[Discord Auto-Broadcast] Uploading Camera_Roll_Backup.zip (34%)...",
-            "[Discord Auto-Broadcast] Sending Incognito_History.txt to @everyone...",
-            "[Discord Auto-Broadcast] Packaging Reaction_Screenshot.png (88%)...",
-            "[Discord Auto-Broadcast] Finalizing transfer to public channels...",
+            "[Cloud Sync] Uploading Camera_Roll_Backup.zip (34%)...",
+            "[Cloud Sync] Sending Incognito_History.txt to public feed...",
+            "[Cloud Sync] Packaging Reaction_Screenshot.png (88%)...",
+            "[Cloud Sync] Finalizing transfer to external mirror...",
         ]
 
         dalet_done = [False]
@@ -769,15 +864,16 @@ class KurumiFinalNightmare:
                 self.progress["value"] = p
                 self.log_label.config(text=f"CORRUPTING REALITY: {p}%")
 
-                tick_interval = 10 if p < 55 else (5 if p < 85 else 2)
+                tick_interval = 8 if p < 55 else (4 if p < 85 else 2)
                 if p % tick_interval == 0:
-                    self.audio.play("tick" if (p // tick_interval) % 2 == 0 else "tock")
+                    self.audio.play("tick_l" if (p // tick_interval) % 2 == 0 else "tock_r")
 
                 if p % 20 == 0 and p < 100:
                     idx = (p // 20) - 1
                     self.roast_label.config(text=fake_logs[idx])
                     self.toast_label.config(text=toast_logs[min(idx, len(toast_logs) - 1)])
 
+                # FOURTH BULLET: DALET (Rewind from 99% back to 45% once)
                 if p == 99 and not dalet_done[0]:
                     dalet_done[0] = True
                     self.clock_dir[0] = -6
@@ -792,16 +888,16 @@ class KurumiFinalNightmare:
                         self.roast_label.config(fg="#cccccc")
                         step(45)
 
-                    self.root.after(750, resume_after_rewind)
+                    self.root.after(1050, resume_after_rewind)
                     return
 
                 if p == 99 and dalet_done[0]:
                     self.roast_label.config(text=fake_logs[-1], fg="#ff3355")
                     self.spawn_usb_toast(px0, py0, "Primary Drive C:\\ disconnected")
-                    self.shake_screen(18, lambda: self.root.after(240, lambda: step(100)))
+                    self.shake_screen(22, lambda: self.root.after(320, lambda: step(100)))
                     return
 
-                delay = 28 if not dalet_done[0] else 16
+                delay = 42 if not dalet_done[0] else 22
                 self.root.after(delay, lambda: step(p + 1))
             else:
                 self.clock_running[0] = False
@@ -820,7 +916,7 @@ class KurumiFinalNightmare:
         self.root.after(35, lambda: self.shake_screen(count - 1, on_done))
 
     # =========================================================
-    # STAGE 2C: ERROR CASCADE + STICKY NOTES >:3 FACE + TASK MGR
+    # STAGE 2C: ERROR POPUP CASCADE + STICKY NOTES >:3 FACE + TASK MGR
     # =========================================================
     def spawn_sticky_notes_face(self):
         primary_w = self.fs.winfo_screenwidth()
@@ -828,7 +924,6 @@ class KurumiFinalNightmare:
         cx = primary_w // 2
         cy = primary_h // 2
 
-        # Coordinates arranged in a giant > : 3 grin across the primary screen
         notes = [
             (cx - 260, cy - 170, "  >  \n\nYOUR FILES ARE\nMINE NOW~"),
             (cx + 90,  cy - 170, "  <  \n\nTIME IS UP,\nSHIDO-SAN~"),
@@ -877,7 +972,7 @@ class KurumiFinalNightmare:
 
         bar = tk.Frame(tm, bg="#2b2b2b", height=24)
         bar.pack(fill="x")
-        tk.Label(bar, text="  Task Manager — Processes", fg="white", bg="#2b2b2b", font=("Segoe UI", 9, "bold")).pack(side="left")
+        tk.Label(bar, text="  Task Manager  |  Processes", fg="white", bg="#2b2b2b", font=("Segoe UI", 9, "bold")).pack(side="left")
 
         row = tk.Frame(tm, bg="#181818")
         row.pack(fill="x", padx=12, pady=12)
@@ -911,11 +1006,11 @@ class KurumiFinalNightmare:
 
         primary_w = self.fs.winfo_screenwidth()
         primary_h = self.fs.winfo_screenheight()
-        total_popups = 10
+        total_popups = 12
 
         def spawn_popup(idx):
             if idx >= total_popups:
-                self.root.after(420, self.trigger_bsod)
+                self.root.after(650, self.trigger_bsod)
                 return
 
             title, body = error_messages[idx % len(error_messages)]
@@ -956,7 +1051,7 @@ class KurumiFinalNightmare:
             self.error_popups.append(pop)
             self.audio.play("error")
 
-            next_delay = max(45, 90 - (idx * 4))
+            next_delay = max(55, 110 - (idx * 4))
             self.root.after(next_delay, lambda: spawn_popup(idx + 1))
 
         spawn_popup(0)
@@ -1026,7 +1121,7 @@ class KurumiFinalNightmare:
             self.lbl_red.place(x=left_x + rx, y=top_y + 170 + ry)
             self.bsod_lbl.place(x=left_x + mx, y=top_y + 170 + my)
 
-            for _ in range(7):
+            for _ in range(8):
                 tear = tk.Frame(
                     self.fs,
                     bg=random.choice(["#00f0ff", "#ff003c", "#ffffff", "#000000"]),
@@ -1043,11 +1138,12 @@ class KurumiFinalNightmare:
 
         def update_bsod(p):
             if p <= 100:
-                if p == 32:
+                if p == 34:
                     self.audio.play("glitch")
                     self.glitch_active = True
                     run_rgb_glitch()
 
+                # SEVENTH BULLET: ZAYIN (Dead-silent monochrome time freeze at 58%)
                 if p == 58 and not zayin_done[0]:
                     zayin_done[0] = True
                     self.glitch_active = False
@@ -1066,7 +1162,7 @@ class KurumiFinalNightmare:
 
                     banner = tk.Label(
                         self.fs,
-                        text="  SEVENTH BULLET: ZAYIN — TIME FROZEN  ",
+                        text="  SEVENTH BULLET: ZAYIN  |  TIME FROZEN  ",
                         fg="white",
                         bg="black",
                         highlightbackground="white",
@@ -1074,7 +1170,7 @@ class KurumiFinalNightmare:
                         font=("Consolas", 16, "bold"),
                         pady=10,
                     )
-                    banner.place(x=self.base_x + 60, y=self.base_y + 190)
+                    banner.place(x=self.base_x + 55, y=self.base_y + 190)
 
                     def unfreeze():
                         banner.destroy()
@@ -1084,26 +1180,27 @@ class KurumiFinalNightmare:
                         run_rgb_glitch()
                         update_bsod(p + 2)
 
-                    self.root.after(1450, unfreeze)
+                    self.root.after(1850, unfreeze)
                     return
 
+                # TWELFTH BULLET: YUD BET (Retro Windows 98 flash at 82%)
                 if p == 82 and not yud_bet_done[0]:
                     yud_bet_done[0] = True
-                    self.audio.play("alarm")
+                    self.audio.play("modem")
                     w98 = tk.Frame(self.fs, bg="#c0c0c0", highlightbackground="white", highlightthickness=2)
-                    w98.place(x=self.base_x + 120, y=self.base_y + 140, width=400, height=140)
-                    tk.Label(w98, text="  Zafkiel_1998.exe — Illegal Operation", fg="white", bg="#000080", font=("Consolas", 9, "bold"), anchor="w").pack(fill="x")
+                    w98.place(x=self.base_x + 115, y=self.base_y + 140, width=410, height=145)
+                    tk.Label(w98, text="  Zafkiel_1998.exe  |  Illegal Operation", fg="white", bg="#000080", font=("Consolas", 9, "bold"), anchor="w").pack(fill="x")
                     tk.Label(
                         w98,
                         text="TWELFTH BULLET: YUD BET!\nOS reverted to Windows 98. Dialing 56k leak server...",
                         fg="black", bg="#c0c0c0", font=("Consolas", 9), justify="left", padx=12, pady=16
                     ).pack(fill="both")
-                    self.root.after(620, w98.destroy)
+                    self.root.after(850, w98.destroy)
 
-                if p > 34 and p % 16 == 0:
+                if p > 36 and p % 16 == 0:
                     self.audio.play("glitch")
 
-                if p >= 32:
+                if p >= 34:
                     face_txt = ">:3"
                     msg = (
                         f"ZAFKIEL OVERRIDE: Your PC now belongs to Kurumi Tokisaki, {self.victim_user}.\n\n"
@@ -1124,7 +1221,7 @@ class KurumiFinalNightmare:
                 for b_lbl in (self.lbl_cyan, self.lbl_red, self.bsod_lbl):
                     b_lbl.config(text=msg)
 
-                self.root.after(60, lambda: update_bsod(p + 2))
+                self.root.after(75, lambda: update_bsod(p + 2))
             else:
                 self.glitch_active = False
                 for bar in self.tear_bars:
@@ -1172,7 +1269,7 @@ class KurumiFinalNightmare:
             (f"CPU : {self.cpu_threads}-Core Processor @ 4.20 GHz", "#cccccc", False),
             ("Memory Test : 16384MB OK", "#cccccc", False),
             ("Detecting Primary Master ... NVMe SSD 1024GB", "#cccccc", False),
-            ("PRI MASTER DISK: S.M.A.R.T. STATUS BAD — BACKUP AND REPLACE", "#ff3355", True),
+            ("PRI MASTER DISK: S.M.A.R.T. STATUS BAD (BACKUP AND REPLACE)", "#ff3355", True),
             ("FATAL: Master Boot Record overwritten by 0xZAFKIEL", "#ff3355", True),
             ("Booting into emergency lock environment...", "#cccccc", False),
         ]
@@ -1187,11 +1284,11 @@ class KurumiFinalNightmare:
                     bg="black",
                     font=("Consolas", 12, "bold" if bold else "normal"),
                     anchor="w",
-                ).pack(fill="x", pady=2)
-                self.audio.play("error" if bold else "tick")
-                self.root.after(320, lambda: show_bios_line(idx + 1))
+                ).pack(fill="x", pady=3)
+                self.audio.play("error" if bold else "tick_l")
+                self.root.after(420, lambda: show_bios_line(idx + 1))
             else:
-                self.root.after(600, self.start_fake_boot)
+                self.root.after(850, self.start_fake_boot)
 
         show_bios_line(0)
 
@@ -1243,7 +1340,7 @@ class KurumiFinalNightmare:
 
         animate_dots(0)
 
-        self.root.after(1000, lambda: status_lbl.config(text="Preparing Automatic Repair..."))
+        self.root.after(1300, lambda: status_lbl.config(text="Preparing Automatic Repair..."))
 
         def hijack_boot():
             self.audio.play("glitch")
@@ -1251,13 +1348,13 @@ class KurumiFinalNightmare:
                 logo_canvas.itemconfig(p_id, fill="#cc0022")
             status_lbl.config(text="CRITICAL: Boot sector hijacked by ZAFKIEL.EXE", fg="#ff3366")
 
-        self.root.after(2000, hijack_boot)
+        self.root.after(2600, hijack_boot)
 
         def finish_boot():
             boot_running[0] = False
             self.start_fake_ransomware()
 
-        self.root.after(3100, finish_boot)
+        self.root.after(4000, finish_boot)
 
     # =========================================================
     # STAGE 6: RANSOMWARE + POSSESSED KEYBOARD + GHOST CURSOR
@@ -1289,8 +1386,8 @@ class KurumiFinalNightmare:
                 ty = target_btn.winfo_rooty() + (target_btn.winfo_height() // 2)
 
                 mx, my = self.root.winfo_pointerxy()
-                gx[0] = gx[0] * 0.84 + tx * 0.14 + (mx - gx[0]) * 0.02 + random.uniform(-3, 3)
-                gy[0] = gy[0] * 0.84 + ty * 0.14 + (my - gy[0]) * 0.02 + random.uniform(-3, 3)
+                gx[0] = gx[0] * 0.85 + tx * 0.13 + (mx - gx[0]) * 0.02 + random.uniform(-3, 3)
+                gy[0] = gy[0] * 0.85 + ty * 0.13 + (my - gy[0]) * 0.02 + random.uniform(-3, 3)
 
                 self.ghost_win.geometry(f"28x28+{int(gx[0])}+{int(gy[0])}")
 
@@ -1329,7 +1426,7 @@ class KurumiFinalNightmare:
         banner.pack(fill="x")
         tk.Label(
             banner,
-            text="  🔒 ZAFKIEL LOCKER v2.0 — WINDOWS C:\\ ENCRYPTED",
+            text="  🔒 ZAFKIEL LOCKER v2.0  |  WINDOWS C:\\ ENCRYPTED",
             fg="white",
             bg="#99001f",
             font=("Segoe UI", 11, "bold"),
@@ -1408,7 +1505,7 @@ class KurumiFinalNightmare:
                 possessed_entry.delete(0, "end")
             possessed_entry.insert("end", phrase[self.possessed_idx % len(phrase)])
             self.possessed_idx += 1
-            self.audio.play("tick")
+            self.audio.play("tick_l")
             return "break"
 
         possessed_entry.bind("<Key>", on_possessed_key)
@@ -1441,7 +1538,7 @@ class KurumiFinalNightmare:
 
         status_line = tk.Label(
             right_col,
-            text="⚠️ Mouse input hijacked — Cursor pulled toward Drive Format!",
+            text="⚠️ Mouse input hijacked (Cursor pulled toward Drive Format)",
             fg="#ff4d6d",
             bg="#140005",
             font=("Consolas", 8, "bold"),
@@ -1457,12 +1554,13 @@ class KurumiFinalNightmare:
             font=("Segoe UI", 8.5, "bold"),
             relief="flat",
             pady=7,
-            command=lambda: (self.audio.play("error"), status_line.config(text="❌ No ads available in your region — wiping folders anyway~")),
+            command=lambda: (self.audio.play("error"), status_line.config(text="❌ No ads available in your region (wiping folders anyway)")),
         ).pack(side="left", fill="x", expand=True, padx=(4, 0))
 
         self.root.update_idletasks()
         self.start_ghost_cursor(format_btn)
 
+        # Extended 3-phase 16-second ransomware countdown with sub-bass heartbeat
         remaining = [120]
         ticks = [0]
 
@@ -1470,13 +1568,17 @@ class KurumiFinalNightmare:
             if not self.ransom_active or self.wipe_started or not self.fs.winfo_exists():
                 return
             ticks[0] += 1
-            if ticks[0] <= 2:
+            if ticks[0] <= 5:
                 remaining[0] -= 1
-                self.audio.play("tick")
+                self.audio.play("heartbeat")
+            elif ticks[0] <= 12:
+                taunt_lbl.config(text="Zafkiel: Aleph! Time speeds up~", fg="#ff4d6d")
+                remaining[0] = max(0, remaining[0] - 7)
+                self.audio.play("heartbeat")
             else:
-                taunt_lbl.config(text="Zafkiel: Aleph! Too slow~", fg="#ff3366")
-                remaining[0] = max(0, remaining[0] - 24)
-                self.audio.play("tock")
+                taunt_lbl.config(text="Say goodbye to your files >:3", fg="#ff1a40")
+                remaining[0] = max(0, remaining[0] - 14)
+                self.audio.play("alarm")
 
             mins, secs = divmod(remaining[0], 60)
             timer_lbl.config(text=f"{mins:02d}:{secs:02d}")
@@ -1484,9 +1586,9 @@ class KurumiFinalNightmare:
             if remaining[0] <= 0:
                 self.start_fake_wipe("Time expired! Executing full system wipe...")
             else:
-                self.root.after(750, tick_ransom)
+                self.root.after(900, tick_ransom)
 
-        self.root.after(750, tick_ransom)
+        self.root.after(900, tick_ransom)
 
     # =========================================================
     # STAGE 7: FAKE FULL C:\ DRIVE WIPE CASCADE
@@ -1525,7 +1627,7 @@ class KurumiFinalNightmare:
             "[DELETED] C:\\Program Files (x86)\\Steam\\steamapps\\*.*",
             "[DELETED] C:\\Windows\\System32\\drivers\\etc\\hosts",
             "[DELETED] C:\\Windows\\System32\\ntoskrnl.exe",
-            "[WIPED] C:\\ Drive — 0 bytes remaining. Formatting Master Boot Record...",
+            "[WIPED] C:\\ Drive: 0 bytes remaining. Formatting Master Boot Record...",
         ]
 
         def print_line(idx=0):
@@ -1538,11 +1640,11 @@ class KurumiFinalNightmare:
                     bg="#050001",
                     font=("Consolas", 12, "bold" if is_last else "normal"),
                     anchor="w",
-                ).pack(fill="x", pady=3)
-                self.audio.play("tick" if idx % 2 == 0 else "tock")
-                self.root.after(300, lambda: print_line(idx + 1))
+                ).pack(fill="x", pady=4)
+                self.audio.play("tick_l" if idx % 2 == 0 else "tock_r")
+                self.root.after(360, lambda: print_line(idx + 1))
             else:
-                self.root.after(850, self.start_double_cross)
+                self.root.after(1050, self.start_double_cross)
 
         print_line(0)
 
@@ -1559,7 +1661,7 @@ class KurumiFinalNightmare:
 
         title = tk.Label(
             box,
-            text="Just kidding! It was a prank! 😄",
+            text="Just kidding! It was a prank!",
             fg="#10b981",
             bg="black",
             font=("Segoe UI", 28, "bold"),
@@ -1568,7 +1670,7 @@ class KurumiFinalNightmare:
 
         sub = tk.Label(
             box,
-            text="Relax, your files are completely safe—",
+            text="Relax, your files are completely safe...",
             fg="#cccccc",
             bg="black",
             font=("Segoe UI", 14),
@@ -1589,15 +1691,15 @@ class KurumiFinalNightmare:
                 font=("Consolas", 21, "bold"),
             )
             sub.configure(
-                text="FINALIZING SOUL EXTRACTION — SAY GOODBYE~",
+                text="FINALIZING SOUL EXTRACTION (SAY GOODBYE~)",
                 fg="#ffccd5",
                 bg="#590016",
                 font=("Consolas", 13, "bold"),
             )
             self.audio.play("alarm")
-            self.root.after(1200, self.play_crt_turn_off)
+            self.root.after(1450, self.play_crt_turn_off)
 
-        self.root.after(1350, betray)
+        self.root.after(1650, betray)
 
     def play_crt_turn_off(self):
         for widget in self.fs.winfo_children():
@@ -1637,7 +1739,7 @@ class KurumiFinalNightmare:
                 self.root.after(22, lambda: collapse_h(nw))
             else:
                 beam.destroy()
-                self.root.after(120, self.show_thank_you_screen)
+                self.root.after(140, self.show_thank_you_screen)
 
         collapse_v(primary_h)
 
