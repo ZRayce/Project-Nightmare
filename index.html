@@ -20,6 +20,19 @@
     }
     .active { display: flex; }
 
+    /* CREEPING SHADOW VIGNETTE + FULLSCREEN RE-SYNC OVERLAY */
+    #shadow-vignette {
+      position: fixed; inset: 0; pointer-events: none; z-index: 72;
+      display: none;
+      box-shadow: inset 0 0 130px rgba(0, 0, 0, 0.96), inset 0 0 45px rgba(180, 0, 35, 0.45);
+    }
+    #fs-resync-overlay {
+      position: fixed; inset: 0; background: rgba(5, 0, 2, 0.94);
+      z-index: 240; display: none; flex-direction: column;
+      align-items: center; justify-content: center; padding: 24px;
+      text-align: center; cursor: pointer;
+    }
+
     /* GLOBAL EFFECTS: SHUTTER, TIME FREEZE, CRACKED GLASS, CRT TURN-OFF */
     #shutter-flash {
       position: fixed; inset: 0; background: #ffffff;
@@ -526,6 +539,18 @@
 </head>
 <body>
 
+  <div id="shadow-vignette"></div>
+  <div id="fs-resync-overlay" onclick="restoreFullscreenTrap()">
+    <div style="font-size:42px;margin-bottom:10px;">⚠️</div>
+    <h2 style="color:#ff2a55;font-family:monospace;margin:0 0 8px;">DISPLAY SYNC INTERRUPTED</h2>
+    <p style="color:#ddd;max-width:380px;font-size:14px;margin:0 0 16px;">
+      Fullscreen containment was broken before Zafkiel finished scanning. Tap anywhere to re-sync display.
+    </p>
+    <div style="background:#cc0022;padding:10px 22px;border-radius:6px;font-weight:bold;">
+      Tap to Continue
+    </div>
+  </div>
+
   <div id="shutter-flash"></div>
   <div id="zayin-banner">SEVENTH BULLET: ZAYIN — TIME FROZEN</div>
   <div id="scanline-overlay"></div>
@@ -598,7 +623,12 @@
   <!-- STAGE 0: BAIT -->
   <div id="bait-screen" class="screen active">
     <div class="bait-card">
-      <div id="bait-icon" style="font-size: 40px;">🎁</div>
+      <div id="bait-logo" style="display:flex;justify-content:center;margin-bottom:6px;">
+        <svg width="54" height="54" viewBox="0 0 54 54">
+          <rect width="54" height="54" rx="14" fill="#5865F2"/>
+          <path d="M16 24h22v16H16z M14 19h26v5H14z M25 14h4v26h-4z" fill="#fff"/>
+        </svg>
+      </div>
       <h2 style="margin: 10px 0 6px;" id="bait-title">You received a Mystery Gift!</h2>
       <p id="bait-desc" style="color: #a0a6b8; font-size: 14px; margin: 0;">
         Complete quick device verification to claim your reward before it expires.
@@ -828,10 +858,14 @@
       <div style="margin-top: 10px;">
         <label class="builder-label" for="bait-page">Link Preview Disguise (Discord / Messenger)</label>
         <select id="bait-page" class="share-select" onchange="buildCustomUrl()">
-          <option value="trial.html">✨ 30-Day VIP Free Trial (trial.html)</option>
+          <option value="nitrosaurus.html">🚀 ChatterBox Nitro Gift (nitrosaurus.html)</option>
+          <option value="streamflix.html">🎬 StreamFlix 4K Invite (streamflix.html)</option>
+          <option value="clouddrive.html">☁️ CloudVault Folder (clouddrive.html)</option>
+          <option value="parceltrack.html">📦 QuickDrop Parcel (parceltrack.html)</option>
+          <option value="gamevault.html">🎮 SteemVault Game Key (gamevault.html)</option>
+          <option value="trial.html">✨ VIP Free Trial (trial.html)</option>
           <option value="gift.html">🎁 Mystery Gift (gift.html)</option>
           <option value="album.html">📸 Shared Photo Album (album.html)</option>
-          <option value="index.html">⚠️ Direct Trap (index.html)</option>
         </select>
       </div>
 
@@ -878,26 +912,96 @@
     const isDesktop = !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) && window.innerWidth >= 768;
     const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local/UTC';
 
+    let audioCtx;
+    let dodges = 0;
+    let clonesSpawned = false;
+    let prankActive = false;
+    let prankFinished = false;
+    let glitchLoopId = null;
+    let tabLoopId = null;
+    let chatLoopId = null;
+    let ransomIntervalId = null;
+    let ghostIntervalId = null;
+    let uacTriggered = false;
+    let wipeStarted = false;
+    let possessedIdx = 0;
+    const possessedPhrase = "A R A  A R A  S A V E  M E  K U R U M I  ";
+
+    // Knock-off Parody Themes with custom geometric SVG logos (zero trademarks)
+    const baitThemes = {
+      nitro: {
+        brand: 'ChatterBox Nitro',
+        title: '1-Month Nitro Boost Gift',
+        desc: 'You received a prepaid Nitro Boost + HD Streaming pass. Tap below to verify your device and claim.',
+        cta: 'Claim Nitro Gift',
+        color: '#5865F2',
+        svg: '<svg width="54" height="54" viewBox="0 0 54 54"><rect width="54" height="54" rx="14" fill="#5865F2"/><circle cx="21" cy="27" r="4" fill="#fff"/><circle cx="33" cy="27" r="4" fill="#fff"/><path d="M16 19c6-3 16-3 22 0l3 15c-6 4-22 4-28 0z" fill="none" stroke="#fff" stroke-width="2.5"/></svg>'
+      },
+      stream: {
+        brand: 'StreamFlix 4K',
+        title: 'Ultra HD Family Slot Invite',
+        desc: 'You have been invited to a shared 4K Ultra HD profile. Tap below to activate your 30-day pass.',
+        cta: 'Accept 4K Invite',
+        color: '#e50914',
+        svg: '<svg width="54" height="54" viewBox="0 0 54 54"><rect width="54" height="54" rx="12" fill="#141414" stroke="#e50914" stroke-width="2"/><path d="M18 14h6l12 26h-6z M18 14h6v26h-6z M30 14h6v26h-6z" fill="#e50914"/></svg>'
+      },
+      cloud: {
+        brand: 'CloudVault',
+        title: 'Shared Backup Folder (24 Items)',
+        desc: 'Complete quick viewer verification to open the shared photos and files before the link expires.',
+        cta: 'Open Shared Folder',
+        color: '#2563eb',
+        svg: '<svg width="54" height="54" viewBox="0 0 54 54"><rect width="54" height="54" rx="14" fill="#1e293b"/><path d="M18 36h19a7 7 0 0 0 1-13.9A9 9 0 0 0 20.5 20 6.5 6.5 0 0 0 18 36z" fill="#3b82f6"/></svg>'
+      },
+      parcel: {
+        brand: 'QuickDrop Express',
+        title: 'Parcel #QD-8841 — Action Needed',
+        desc: 'Delivery attempt paused at local hub. Confirm your delivery window now to prevent return to sender.',
+        cta: 'Confirm Delivery Slot',
+        color: '#d97706',
+        svg: '<svg width="54" height="54" viewBox="0 0 54 54"><rect width="54" height="54" rx="14" fill="#291d0a"/><path d="M27 13l14 7v14l-14 7-14-7V20z" fill="none" stroke="#f59e0b" stroke-width="2.6"/><path d="M13 20l14 7 14-7M27 27v14" stroke="#f59e0b" stroke-width="2.2"/></svg>'
+      },
+      game: {
+        brand: 'SteemVault',
+        title: 'Digital Game & Wallet Key',
+        desc: 'A friend sent you a redeemable SteemVault gift code. Tap below to verify region and reveal your key.',
+        cta: 'Redeem Gift Key',
+        color: '#0284c7',
+        svg: '<svg width="54" height="54" viewBox="0 0 54 54"><rect width="54" height="54" rx="14" fill="#0f172a"/><circle cx="31" cy="23" r="6" fill="none" stroke="#38bdf8" stroke-width="3"/><path d="M14 35l12-10M18 32l4 4" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/></svg>'
+      },
+      album: {
+        brand: 'Shared Photo Album',
+        title: 'Shared Photo Album (18 items)',
+        desc: 'Complete quick viewer verification to unlock the shared photos before the link expires.',
+        cta: 'Verify & View Album',
+        color: '#2563eb',
+        svg: '<svg width="54" height="54" viewBox="0 0 54 54"><rect width="54" height="54" rx="14" fill="#1e293b"/><rect x="14" y="16" width="26" height="22" rx="3" fill="none" stroke="#60a5fa" stroke-width="2.5"/><circle cx="22" cy="24" r="2.5" fill="#60a5fa"/><path d="M16 35l8-8 5 5 4-4 5 7" fill="none" stroke="#60a5fa" stroke-width="2.2"/></svg>'
+      },
+      trial: {
+        brand: 'VIP Pro Pass',
+        title: '30-Day VIP Pro Free Trial',
+        desc: 'No credit card required. Tap below to verify your device and activate your 1-month pass.',
+        cta: 'Activate Free Trial',
+        color: '#10b981',
+        svg: '<svg width="54" height="54" viewBox="0 0 54 54"><rect width="54" height="54" rx="14" fill="#064e3b"/><path d="M27 13l4.2 8.5 9.4 1.4-6.8 6.6 1.6 9.3L27 34.4l-8.4 4.4 1.6-9.3-6.8-6.6 9.4-1.4z" fill="#34d399"/></svg>'
+      }
+    };
+
+    const activeTheme = baitThemes[params.get('bait')];
+    if (activeTheme) {
+      document.title = `${activeTheme.brand} — ${activeTheme.title}`;
+      document.getElementById('bait-logo').innerHTML = activeTheme.svg;
+      document.getElementById('bait-title').textContent = activeTheme.title;
+      document.getElementById('bait-desc').textContent = activeTheme.desc;
+      document.getElementById('bait-cta').textContent = activeTheme.cta;
+      document.getElementById('bait-cta').style.background = activeTheme.color;
+    }
+
     document.getElementById('demand-amount').textContent = customDemand;
 
     if (senderName) {
       document.getElementById('reveal-msg').innerHTML =
         `You got pranked by <strong>${senderName}</strong> (and Kurumi Tokisaki)! Relax—zero files were encrypted or deleted, your screen was never broadcast, and your device is 100% safe.`;
-    }
-
-    if (params.get('bait') === 'album') {
-      document.getElementById('bait-icon').textContent = '📸';
-      document.getElementById('bait-title').textContent = 'Shared Photo Album (18 items)';
-      document.getElementById('bait-desc').textContent =
-        'Complete quick viewer verification to unlock the shared photos before the link expires.';
-      document.getElementById('bait-cta').textContent = 'Verify & View Album';
-    } else if (params.get('bait') === 'trial') {
-      document.getElementById('bait-icon').textContent = '✨';
-      document.getElementById('bait-title').textContent = '30-Day VIP Pro Free Trial';
-      document.getElementById('bait-desc').textContent =
-        'No credit card required. Tap below to verify your device and activate your 1-month pass.';
-      document.getElementById('bait-cta').textContent = 'Activate Free Trial';
-      document.getElementById('bait-cta').style.background = '#10b981';
     }
 
     if (!isDesktop) {
@@ -940,20 +1044,33 @@
     document.getElementById('taunt-text').innerHTML =
       `"Ara, ara~ Welcome, <strong>${targetName}</strong>.<br>Zafkiel is hungry for your time~"`;
 
-    let audioCtx;
-    let dodges = 0;
-    let clonesSpawned = false;
-    let prankActive = false;
-    let prankFinished = false;
-    let glitchLoopId = null;
-    let tabLoopId = null;
-    let chatLoopId = null;
-    let ransomIntervalId = null;
-    let ghostIntervalId = null;
-    let uacTriggered = false;
-    let wipeStarted = false;
-    let possessedIdx = 0;
-    const possessedPhrase = "A R A  A R A  S A V E  M E  K U R U M I  ";
+    // Re-sync fullscreen if user exits fullscreen via top hover without pressing ESC
+    document.addEventListener('fullscreenchange', () => {
+      if (prankActive && !prankFinished && !document.fullscreenElement) {
+        document.getElementById('fs-resync-overlay').style.display = 'flex';
+        beep(320, 0.14, 'sawtooth');
+      }
+    });
+
+    function restoreFullscreenTrap() {
+      document.getElementById('fs-resync-overlay').style.display = 'none';
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    }
+
+    // Resume straight into Stage 2 if the user hits Refresh mid-prank
+    window.addEventListener('DOMContentLoaded', () => {
+      if (sessionStorage.getItem('nightmare_active') === '1') {
+        prankActive = true;
+        enableBackTrap();
+        startTabFlasher();
+        document.getElementById('shadow-vignette').style.display = 'block';
+        startCollapse();
+        document.getElementById('scan-log').textContent =
+          `"Did you really think refreshing would save you, ${targetName}?"`;
+      }
+    });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -1007,12 +1124,15 @@
 
     function cleanupAllEffects() {
       prankActive = false;
+      sessionStorage.removeItem('nightmare_active');
       stopGlitchEngine();
       stopGhostCursor();
       stopStreamChat();
       clearErrorPopups();
       if (tabLoopId) clearInterval(tabLoopId);
       document.title = 'ARA ARA~! — Project Nightmare';
+      document.getElementById('shadow-vignette').style.display = 'none';
+      document.getElementById('fs-resync-overlay').style.display = 'none';
       document.getElementById('live-share-frame').style.display = 'none';
       document.getElementById('defender-toast').classList.remove('show');
       document.getElementById('dm-toast').classList.remove('show');
@@ -1149,6 +1269,8 @@
 
     function startPrank() {
       prankActive = true;
+      sessionStorage.setItem('nightmare_active', '1');
+      document.getElementById('shadow-vignette').style.display = 'block';
       enableBackTrap();
       startTabFlasher();
 
@@ -1745,15 +1867,21 @@
 
       ransomIntervalId = setInterval(() => {
         ticks++;
-        if (ticks <= 2) {
+        if (ticks <= 5) {
           remaining -= 1;
           beep(880, 0.06);
+        } else if (ticks <= 12) {
+          tauntEl.style.color = '#ff4d6d';
+          tauntEl.textContent = 'Zafkiel: Aleph! Time speeds up~';
+          remaining = Math.max(0, remaining - 7);
+          beep(1020, 0.06, 'sawtooth');
+          buzz(40);
         } else {
-          tauntEl.style.color = '#ff3366';
-          tauntEl.textContent = 'Zafkiel: Aleph! Too slow~';
-          remaining = Math.max(0, remaining - 24);
-          beep(1150, 0.05, 'sawtooth');
-          buzz(45);
+          tauntEl.style.color = '#ff1a40';
+          tauntEl.textContent = 'Say goodbye to your files >:3';
+          remaining = Math.max(0, remaining - 14);
+          beep(1240, 0.06, 'sawtooth');
+          buzz([60, 40, 60]);
         }
 
         timerEl.textContent = formatMMSS(remaining);
@@ -1762,7 +1890,7 @@
           clearInterval(ransomIntervalId);
           triggerWipeNow('Time expired! Executing full system wipe...');
         }
-      }, 750);
+      }, 900);
     }
 
     function triggerWipeNow(reasonText) {
@@ -1865,10 +1993,20 @@
 
     // STAGE 8: TRUE REVEAL & LIVE LINK BUILDER
     function initLinkBuilder() {
+      const baitMap = {
+        nitro: 'nitrosaurus.html',
+        stream: 'streamflix.html',
+        cloud: 'clouddrive.html',
+        parcel: 'parceltrack.html',
+        game: 'gamevault.html',
+        trial: 'trial.html',
+        gift: 'gift.html',
+        album: 'album.html'
+      };
       const currentBait = params.get('bait');
-      if (currentBait === 'album') document.getElementById('bait-page').value = 'album.html';
-      else if (currentBait === 'gift') document.getElementById('bait-page').value = 'gift.html';
-      else if (currentBait === 'trial') document.getElementById('bait-page').value = 'trial.html';
+      if (baitMap[currentBait]) {
+        document.getElementById('bait-page').value = baitMap[currentBait];
+      }
 
       if (params.get('to')) document.getElementById('friend-name').value = params.get('to');
       if (params.get('from')) document.getElementById('sender-name').value = params.get('from');
@@ -1911,12 +2049,8 @@
 
     async function shareCustomLink() {
       const finalUrl = buildCustomUrl();
-      const page = document.getElementById('bait-page').value;
-      const shareTitle = page === 'album.html'
-        ? 'Shared Photo Album (18 items)'
-        : page === 'trial.html'
-        ? '30-Day VIP Pro Free Trial Pass'
-        : 'You received a Mystery Gift!';
+      const sel = document.getElementById('bait-page');
+      const shareTitle = sel.options[sel.selectedIndex].text.replace(/\s*\(.*?\)\s*$/, '');
 
       try {
         await navigator.clipboard.writeText(finalUrl);
